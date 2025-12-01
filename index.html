@@ -1,83 +1,11 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <title>Gerador de Rodízio</title>
-    <link rel="stylesheet" href="style.css">
-</head>
+Culto (Dom / Ter / Qui)
+<input id="opCulto" type="text" placeholder="Ex: Abimael, Daniel, Fábio, Jonas">
 
-<body>
+Reunião de Jovens (Dom de manhã)
+<input id="opReuniao" type="text" placeholder="Ex: Daniel, Jonatas">
 
-<div class="container">
+Ensaio (2ª sexta do mês)
+<input id="opEnsaio" type="text" placeholder="Ex: Jonatas, Daniel">
 
-    <h1>Rodízio de Cultos</h1>
-    <h2>Congregação Cristã no Brasil</h2>
-
-    <!-- Seleção do mês -->
-    <div class="box">
-        <label>Mês:</label>
-        <div class="line">
-            <input type="month" id="mesSelecionado">
-            <button class="btn" onclick="gerarRodizio()">Gerar Rodízio</button>
-        </div>
-
-        <div class="line">
-            <button class="btn-secondary" onclick="salvar()">Salvar Operadores</button>
-            <button class="btn-secondary" onclick="carregar()">Carregar Salvos</button>
-            <button class="btn-danger" onclick="limpar()">Limpar Salvos</button>
-        </div>
-    </div>
-
-    <!-- Operadores -->
-    <h2>Operadores</h2>
-
-    <div class="box">
-        <label>Culto (Dom / Ter / Qui)</label>
-        <input id="opCulto" placeholder="Ex: Abimael, Daniel, Fábio, Jonatas">
-
-        <label>Primeiro a tocar (opcional)</label>
-        <input id="primeiroCulto" placeholder="Ex: Daniel">
-    </div>
-
-    <div class="box">
-        <label>Reunião de Jovens (Dom de manhã)</label>
-        <input id="opReuniao" placeholder="Ex: Daniel, Jonatas">
-
-        <label>Primeiro a tocar (opcional)</label>
-        <input id="primeiroReuniao" placeholder="Ex: Jonatas">
-    </div>
-
-    <div class="box">
-        <label>Ensaio (2ª sexta do mês)</label>
-        <input id="opEnsaio" placeholder="Ex: Jonatas, Daniel">
-
-        <label>Primeiro a tocar (opcional)</label>
-        <input id="primeiroEnsaio" placeholder="Ex: Jonatas">
-    </div>
-
-    <div class="box">
-        <label>Culto de Jovens (2º sábado)</label>
-        <input id="opCultoJovem" placeholder="Ex: Daniel, Carlos">
-
-        <label>Primeiro a tocar (opcional)</label>
-        <input id="primeiroCultoJovem" placeholder="Ex: Carlos">
-    </div>
-
-    <!-- ÁREA DAS TABELAS -->
-    <h2>CULTOS</h2>
-    <table class="tabela" id="tabelaCulto"></table>
-
-    <h2>REUNIÃO DE JOVENS</h2>
-    <table class="tabela" id="tabelaReuniao"></table>
-
-    <h2>ENSAIO</h2>
-    <table class="tabela" id="tabelaEnsaio"></table>
-
-    <h2>CULTO DE JOVENS</h2>
-    <table class="tabela" id="tabelaCultoJovem"></table>
-
-</div>
-
-<script src="script.js"></script>
-</body>
-</html>
+Culto de Jovens (2º sábado)
+<input id="opCultoJovem" type="text" placeholder="Ex: Daniel, Carlos">
