@@ -1,99 +1,349 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Rodízio de Cultos — Gerador Automático</title>
 <style>
-    table {
-        border-collapse: collapse;
-        width: 100%;
-        font-family: Arial, sans-serif;
-        font-size: 14px;
-    }
-    th {
-        background: #d0cdcd;
-        padding: 5px;
-        border: 1px solid #000;
-        text-align: left;
-    }
-    td {
-        padding: 5px;
-        border: 1px solid #000;
-    }
-    .titulo {
-        text-align: center;
-        font-size: 18px;
-        font-weight: bold;
-        padding: 10px;
-    }
-    .secao {
-        background: #e0e0e0;
-        font-weight: bold;
-        padding: 6px;
-        margin-top: 20px;
-    }
+  :root{
+    --cinza:#dcdcdc;
+    --header:#bfbfbf;
+    --blue:#cfdff8;
+    --orange:#f4d9b5;
+    --red:#f7cfcf;
+    --border:#7a7a7a;
+    --paper:#fff;
+  }
+  body{
+    font-family: "Arial", sans-serif;
+    background: #f8f8f8;
+    margin:0;
+    padding:18px;
+    color:#111;
+  }
+  .container{
+    max-width:1050px;
+    margin:0 auto;
+    background:var(--paper);
+    padding:18px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+  }
+  h1{ margin:0 0 8px; font-size:32px; text-align:center; }
+  .subtitle{ text-align:center; margin-bottom:16px; color:#333; }
+
+  .controls{
+    display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:12px 0 18px;
+    justify-content:center;
+  }
+  label{ font-weight:600; margin-right:6px; }
+  select,input[type="month"]{ padding:6px; font-size:14px; }
+  .btn{ padding:8px 10px; cursor:pointer; border:1px solid #666; background:#eee; }
+  .btn.primary{ background:#2f6fd6; color:#fff; border-color:#2f6fd6; }
+  .small{ font-size:13px; padding:6px; }
+
+  .row{ display:flex; gap:14px; flex-wrap:wrap; margin-bottom:18px; }
+  .col{ flex:1 1 320px; min-width:260px; }
+
+  .card{ border:1px solid var(--border); background:#fff; padding:12px; }
+  .card h3{ margin:4px 0 10px; font-size:18px; }
+
+  input.textfull{ width:100%; padding:8px; font-size:14px; border:1px solid #aaa; }
+
+  /* Layout tabela estilo planilha */
+  .sheet{ width:100%; border-collapse:collapse; margin-top:16px; font-size:14px; }
+  .sheet th, .sheet td{ border:1px solid var(--border); padding:8px; vertical-align:middle; }
+  .sheet th{ background:var(--header); font-weight:700; text-align:left; }
+  .section-header{ background:var(--cinza); font-weight:700; padding:8px; }
+  .sec-blue{ background:var(--blue); }
+  .sec-orange{ background:var(--orange); }
+  .sec-red{ background:var(--red); }
+
+  .titlebar{
+    display:block; width:100%; text-align:center; padding:6px 0; border:1px solid var(--border); background:#e6e6e6; font-weight:700;
+    margin-bottom:10px;
+  }
+
+  /* imprimir */
+  @media print{
+    body{ background:#fff; }
+    .controls, .card input, .card button{ display:none; }
+    .container{ box-shadow:none; padding:0; margin:0; }
+  }
+
+  /* responsivo */
+  @media (max-width:720px){
+    h1{ font-size:26px; }
+    .row{ flex-direction:column; }
+  }
 </style>
+</head>
+<body>
+<div class="container">
+  <h1>RODÍZIO MÊS DE <span id="previewMes">—</span></h1>
+  <div class="subtitle">Congregação Cristã no Brasil</div>
 
-<div class="titulo">RODIZIO MÊS DE NOVEMBRO - 2025</div>
+  <div class="controls">
+    <label for="monthPick">Mês:</label>
+    <input id="monthPick" type="month" />
+    <button class="btn primary" id="btnGenerate">Gerar Rodízio</button>
+    <button class="btn" id="btnSaveOperators">Salvar Operadores</button>
+    <button class="btn" id="btnResetPointers">Resetar Sequência</button>
+  </div>
 
-<div class="secao">CULTOS:</div>
+  <div class="row">
+    <div class="col card">
+      <h3>Operadores (lista separada por vírgula)</h3>
+      <div style="margin-bottom:8px;">
+        <label><strong>Culto (Dom / Ter / Qui)</strong></label>
+        <input id="opsCulto" class="textfull" placeholder="Abimael, Daniel, Fábio, Jonatas" />
+      </div>
+      <div style="margin-bottom:8px;">
+        <label><strong>Reunião de Jovens (Dom manhã)</strong></label>
+        <input id="opsReuniao" class="textfull" placeholder="Abimael, Daniel, Fábio, Jonatas" />
+      </div>
+      <div style="margin-bottom:8px;">
+        <label><strong>Ensaio (2ª sexta do mês)</strong></label>
+        <input id="opsEnsaio" class="textfull" placeholder="Abimael, Daniel, Fábio, Jonatas" />
+      </div>
+      <div>
+        <label><strong>Culto de Jovens (2º sábado)</strong></label>
+        <input id="opsCultoJovem" class="textfull" placeholder="Abimael, Daniel, Fábio, Jonatas" />
+      </div>
+    </div>
 
-<table>
-    <tr>
-        <th>DIA :</th>
-        <th>DATA :</th>
-        <th>IRMÃO :</th>
-    </tr>
+    <div class="col card" style="min-width:360px;">
+      <h3>Opções</h3>
+      <div style="margin-bottom:8px;">
+        <label>Reiniciar sequência ao mudar mês?</label>
+        <select id="optResetOnMonth" class="textfull">
+          <option value="no">Não — continuar sequência (recomendado)</option>
+          <option value="yes">Sim — reiniciar com o primeiro da lista</option>
+        </select>
+      </div>
+      <div style="font-size:13px;color:#444;">
+        Observações:
+        <ul style="margin:6px 0 0 18px;">
+          <li>O gerador lembra posição entre meses automaticamente.</li>
+          <li>Use "Resetar Sequência" para voltar ao primeiro da lista.</li>
+          <li>Salve os operadores para manter as listas entre visitas.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
 
-    <tr><td>domingo</td><td>2-nov.</td><td>ABIMAEL</td></tr>
-    <tr><td>terça-feira</td><td>4-nov.</td><td>DANIEL</td></tr>
-    <tr><td>quinta-feira</td><td>6-nov.</td><td>FABIO</td></tr>
-    <tr><td>domingo</td><td>9-nov.</td><td>JONATAS</td></tr>
-    <tr><td>terça-feira</td><td>11-nov.</td><td>ABIMAEL</td></tr>
-    <tr><td>quinta-feira</td><td>13-nov.</td><td>DANIEL</td></tr>
-    <tr><td>domingo</td><td>16-nov.</td><td>FABIO</td></tr>
-    <tr><td>terça-feira</td><td>18-nov.</td><td>JONATAS</td></tr>
-    <tr><td>quinta-feira</td><td>20-nov.</td><td>ABIMAEL</td></tr>
-    <tr><td>domingo</td><td>23-nov.</td><td>DANIEL</td></tr>
-    <tr><td>terça-feira</td><td>25-nov.</td><td>FABIO</td></tr>
-    <tr><td>quinta-feira</td><td>27-nov.</td><td>JONATAS</td></tr>
-    <tr><td>domingo</td><td>30-nov.</td><td>ABIMAEL</td></tr>
-</table>
+  <!-- TABELAS -->
+  <div id="resultArea">
+    <!-- O JS vai inserir as tabelas aqui -->
+  </div>
+</div>
 
-<br><br>
+<script>
+/* ---------- utilitários de data ---------- */
+const monthNamesShort = ['jan.','fev.','mar.','abr.','mai.','jun.','jul.','ago.','set.','out.','nov.','dez.'];
+const dayNames = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
 
-<div class="secao">REUNIÃO DE JOVENS :</div>
+function daysInMonth(year, monthIndex){
+  return new Date(year, monthIndex+1, 0).getDate();
+}
 
-<table>
-    <tr>
-        <th>DIA</th>
-        <th>DATA</th>
-        <th>IRMÃO</th>
-    </tr>
-    <tr><td>domingo</td><td>2-nov.</td><td>ABIMAEL</td></tr>
-    <tr><td>domingo</td><td>9-nov.</td><td>DANIEL FEIRA NOVA</td></tr>
-    <tr><td>domingo</td><td>16-nov.</td><td>ABIMAEL</td></tr>
-    <tr><td>domingo</td><td>23-nov.</td><td>DANIEL FEIRA NOVA</td></tr>
-    <tr><td>domingo</td><td>30-nov.</td><td>ABIMAEL</td></tr>
-</table>
+function formatDateShort(d){
+  return d.getDate() + '-' + monthNamesShort[d.getMonth()];
+}
 
-<br><br>
+/* ---------- acesso localStorage ---------- */
+function getSavedOperators(){
+  return {
+    culto: localStorage.getItem('ops_culto') || 'ABIMAEL, DANIEL, FABIO, JONATAS',
+    reuniao: localStorage.getItem('ops_reuniao') || 'ABIMAEL, DANIEL, FABIO, JONATAS',
+    ensaio: localStorage.getItem('ops_ensaio') || 'ABIMAEL, DANIEL, FABIO, JONATAS',
+    cultoJovem: localStorage.getItem('ops_culto_jovem') || 'ABIMAEL, DANIEL, FABIO, JONATAS'
+  };
+}
+function saveOperatorsFromInputs(){
+  localStorage.setItem('ops_culto', document.getElementById('opsCulto').value.trim());
+  localStorage.setItem('ops_reuniao', document.getElementById('opsReuniao').value.trim());
+  localStorage.setItem('ops_ensaio', document.getElementById('opsEnsaio').value.trim());
+  localStorage.setItem('ops_culto_jovem', document.getElementById('opsCultoJovem').value.trim());
+  alert('Operadores salvos localmente!');
+}
+function loadOperatorsToInputs(){
+  const s = getSavedOperators();
+  document.getElementById('opsCulto').value = s.culto;
+  document.getElementById('opsReuniao').value = s.reuniao;
+  document.getElementById('opsEnsaio').value = s.ensaio;
+  document.getElementById('opsCultoJovem').value = s.cultoJovem;
+}
 
-<div class="secao">ENSAIO :</div>
+/* ---------- ponteiros (para continuar sequência) ---------- */
+function getPtr(key){
+  const v = localStorage.getItem('ptr_' + key);
+  return v ? Number(v) : 0;
+}
+function setPtr(key, value){
+  localStorage.setItem('ptr_' + key, String(value));
+}
+function resetAllPointers(){
+  setPtr('culto', 0);
+  setPtr('reuniao', 0);
+  setPtr('ensaio', 0);
+  setPtr('cultoJovem', 0);
+  alert('Sequência reiniciada para todas atividades.');
+}
 
-<table>
-    <tr>
-        <th>DIA</th>
-        <th>DATA</th>
-        <th>IRMÃO</th>
-    </tr>
-    <tr><td>sexta-feira</td><td>14-nov.</td><td>JONATAS</td></tr>
-</table>
+/* ---------- lógica: gerar listas de datas e preencher operadores ---------- */
 
-<br><br>
+function parseList(text){
+  if(!text) return ['—'];
+  return text.split(',').map(s => s.trim()).filter(s=>s.length>0);
+}
 
-<div class="secao" style="color:#b00000;">CULTO DE JOVENS:</div>
+function findAllDaysOfWeek(year, monthIndex, wantedDays){ // wantedDays array e.g. [0,2,4]
+  const days=[];
+  const total = daysInMonth(year, monthIndex);
+  for(let d=1; d<=total; d++){
+    const dt = new Date(year, monthIndex, d);
+    if(wantedDays.includes(dt.getDay())) days.push(dt);
+  }
+  return days;
+}
 
-<table>
-    <tr>
-        <th>DIA</th>
-        <th>DATA</th>
-        <th>IRMÃO</th>
-    </tr>
-    <tr><td>sábado</td><td>8-nov.</td><td>FABIO</td></tr>
-</table>
+function nthWeekdayOfMonth(year, monthIndex, weekday, n){ // n=1 for 1st, 2 for 2nd, etc.
+  let count=0;
+  const total = daysInMonth(year, monthIndex);
+  for(let d=1; d<=total; d++){
+    const dt = new Date(year, monthIndex, d);
+    if(dt.getDay()===weekday){
+      count++;
+      if(count===n) return dt;
+    }
+  }
+  return null;
+}
+
+/* ---------- criar tabela HTML (visual igual planilha) ---------- */
+
+function createTableSection(title, titleClass, rows){
+  // rows = [{dia:'domingo', data:'2-nov.', irmao:'ABIMAEL'}, ...]
+  let html = `<div class="titlebar" style="background:${titleClass}; border:1px solid var(--border); margin-top:8px;">${title}</div>`;
+  html += `<table class="sheet" aria-label="${title}">`;
+  html += `<tr><th style="width:28%;">DIA</th><th style="width:20%;">DATA</th><th>IRMÃO</th></tr>`;
+  rows.forEach(r=>{
+    html += `<tr><td>${r.dia}</td><td>${r.data}</td><td>${r.irmao}</td></tr>`;
+  });
+  html += `</table>`;
+  return html;
+}
+
+/* ---------- função principal de geração ---------- */
+
+function gerarRodizio(){
+  const monthInput = document.getElementById('monthPick').value;
+  if(!monthInput) return alert('Selecione o mês (campo mês).');
+  const [anoStr, mesStr] = monthInput.split('-');
+  const ano = Number(anoStr);
+  const mesIdx = Number(mesStr) - 1;
+
+  // mostrar mês no topo
+  document.getElementById('previewMes').textContent = monthNamesShort[mesIdx].toUpperCase() + ' — ' + ano;
+
+  // obter operadores
+  const opsCulto = parseList(document.getElementById('opsCulto').value || getSavedOperators().culto);
+  const opsReuniao = parseList(document.getElementById('opsReuniao').value || getSavedOperators().reuniao);
+  const opsEnsaio = parseList(document.getElementById('opsEnsaio').value || getSavedOperators().ensaio);
+  const opsCultoJovem = parseList(document.getElementById('opsCultoJovem').value || getSavedOperators().cultoJovem);
+
+  // opção reiniciar na troca de mês?
+  const resetOnMonth = document.getElementById('optResetOnMonth').value === 'yes';
+  if(resetOnMonth){
+    // se quisermos reiniciar, usamos ponteiro 0 para cada atividade nesta execução
+    var ptrCulto = 0, ptrReuniao = 0, ptrEnsaio = 0, ptrCultoJovem = 0;
+  } else {
+    var ptrCulto = getPtr('culto');
+    var ptrReuniao = getPtr('reuniao');
+    var ptrEnsaio = getPtr('ensaio');
+    var ptrCultoJovem = getPtr('cultoJovem');
+  }
+
+  /* ===== CULTO (dom, ter, qui) ===== */
+  const diasCultoDates = findAllDaysOfWeek(ano, mesIdx, [0,2,4]); // 0 dom,2 ter,4 qui
+  const cultoRows = diasCultoDates.map(dt=>{
+    const row = {
+      dia: dayNames[dt.getDay()],
+      data: formatDateShort(dt),
+      irmao: opsCulto[ptrCulto % opsCulto.length] || '—'
+    };
+    ptrCulto++;
+    return row;
+  });
+
+  /* ===== REUNIÃO DE JOVENS (todos domingos) ===== */
+  const domingos = findAllDaysOfWeek(ano, mesIdx, [0]);
+  const reuniaoRows = domingos.map(dt=>{
+    const row = {
+      dia: dayNames[dt.getDay()],
+      data: formatDateShort(dt),
+      irmao: opsReuniao[ptrReuniao % opsReuniao.length] || '—'
+    };
+    ptrReuniao++;
+    return row;
+  });
+
+  /* ===== ENSAIO (2ª sexta-feira do mês) ===== */
+  const dt2aSexta = nthWeekdayOfMonth(ano, mesIdx, 5, 2); // 5 = sexta
+  const ensaioRows = [];
+  if(dt2aSexta){
+    ensaioRows.push({
+      dia: dayNames[dt2aSexta.getDay()],
+      data: formatDateShort(dt2aSexta),
+      irmao: opsEnsaio[ptrEnsaio % opsEnsaio.length] || '—'
+    });
+    ptrEnsaio++;
+  }
+
+  /* ===== CULTO DE JOVENS (2º sábado do mês) ===== */
+  const dt2oSabado = nthWeekdayOfMonth(ano, mesIdx, 6, 2); // 6 = sábado
+  const cultoJovRows = [];
+  if(dt2oSabado){
+    cultoJovRows.push({
+      dia: dayNames[dt2oSabado.getDay()],
+      data: formatDateShort(dt2oSabado),
+      irmao: opsCultoJovem[ptrCultoJovem % opsCultoJovem.length] || '—'
+    });
+    ptrCultoJovem++;
+  }
+
+  // salvar ponteiros (para continuidade no próximo mês)
+  setPtr('culto', ptrCulto % Math.max(1, opsCulto.length));
+  setPtr('reuniao', ptrReuniao % Math.max(1, opsReuniao.length));
+  setPtr('ensaio', ptrEnsaio % Math.max(1, opsEnsaio.length));
+  setPtr('cultoJovem', ptrCultoJovem % Math.max(1, opsCultoJovem.length));
+
+  // montar HTML final
+  let html = '';
+  html += createTableSection('CULTOS:', '#e6e6e6', cultoRows);
+  html += createTableSection('REUNIÃO DE JOVENS:', 'var(--blue)', reuniaoRows);
+  html += createTableSection('ENSAIO:', 'var(--orange)', ensaioRows);
+  html += createTableSection('CULTO DE JOVENS:', 'var(--red)', cultoJovRows);
+
+  document.getElementById('resultArea').innerHTML = html;
+}
+
+/* ---------- eventos ---------- */
+document.getElementById('btnGenerate').addEventListener('click', gerarRodizio);
+document.getElementById('btnSaveOperators').addEventListener('click', saveOperatorsFromInputs);
+document.getElementById('btnResetPointers').addEventListener('click', resetAllPointers);
+
+/* ---------- inicialização ---------- */
+(function init(){
+  // preencher inputs com valores salvos (ou padrão)
+  loadOperatorsToInputs();
+
+  // se houver mês atual, colocar selecionado
+  const now = new Date();
+  const curMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2,'0');
+  document.getElementById('monthPick').value = curMonth;
+  document.getElementById('previewMes').textContent = monthNamesShort[now.getMonth()].toUpperCase() + ' — ' + now.getFullYear();
+})();
+</script>
+</body>
+</html>
