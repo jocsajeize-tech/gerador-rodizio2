@@ -1,52 +1,84 @@
+/* Fonte geral */
 body {
     font-family: Arial, sans-serif;
-    padding: 20px;
-    background: #f4f4f4;
+    margin: 20px;
+    background: #f7f7f7;
 }
 
-h1, h2 {
-    text-align: center;
-}
-
-.inputs {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-.rodizios {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.rodizio-box {
-    background: white;
-    padding: 15px;
-    border: 1px solid #ccc;
-}
-
-textarea {
+/* TÍTULO PRINCIPAL */
+.title-box {
     width: 100%;
-    height: 100px;
+    text-align: center;
+    background: #d9d9d9;
+    padding: 10px 0;
+    font-size: 22px;
+    font-weight: bold;
+    border: 1px solid #bfbfbf;
+    margin-bottom: 20px;
 }
 
-button {
-    padding: 10px 20px;
-    margin-right: 10px;
+/* TÍTULO DE SESSÃO (cinza escuro) */
+.section-title {
+    background: #b3b3b3;
+    font-weight: bold;
+    padding: 6px;
+    margin-top: 25px;
+    color: #000;
 }
 
-table {
+/* TÍTULO DE ÁREAS (Jovens / Ensaio / Culto Jovens) */
+.title-blue {
+    background: #c6d9f1;
+    padding: 6px;
+    font-weight: bold;
+}
+
+.title-orange {
+    background: #fcd5b4;
+    padding: 6px;
+    font-weight: bold;
+}
+
+.title-red {
+    background: #f2dcdb;
+    padding: 6px;
+    font-weight: bold;
+}
+
+/* Tabelas padrão estilo planilha */
+.table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 20px;
+    margin-bottom: 25px;
     background: white;
 }
 
-table th, table td {
-    border: 1px solid #aaa;
-    padding: 8px;
-    text-align: center;
+.table th {
+    background: #b3b3b3;
+    font-weight: bold;
+    padding: 5px;
+    border: 1px solid black;
+    text-align: left;
+}
+
+.table td {
+    border: 1px solid black;
+    padding: 5px;
+}
+
+/* Layout em colunas (desktop) */
+.row {
+    display: flex;
+    gap: 20px;
+}
+
+.col {
+    flex: 1;
+}
+
+/* Responsivo para celular */
+@media (max-width: 768px) {
+    .row {
+        flex-direction: column;
+    }
 }
