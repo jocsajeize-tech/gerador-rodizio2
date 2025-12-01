@@ -1,71 +1,102 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Rodízio</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gerador de Rodízio</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<div class="container">
-
-    <h1>Gerador de Rodízio</h1>
-    <p class="subtitle">Congregação Cristã no Brasil</p>
-
-    <div class="card">
-        <label>Mês:</label>
-        <input type="month" id="mesSelecionado">
-
-        <button class="btn" onclick="gerarRodizio()">Gerar Rodízio</button>
+  <header class="top">
+    <div class="branding">
+      <h1>Rodízio de Cultos</h1>
+      <div class="sub">Congregação Cristã no Brasil</div>
     </div>
+  </header>
 
-    <div class="card">
-        <h2>Operadores</h2>
+  <main class="container">
 
-        <label>Culto (Dom / Ter / Qui):</label>
-        <input id="opCulto" placeholder="Ex: Abimael, Daniel, Fábio, Jonatas">
+    <section class="controls card">
+      <div class="row">
+        <label for="mesSelecionado">Mês:</label>
+        <input id="mesSelecionado" type="month">
+        <button id="btnGenerate" class="btn">Gerar Rodízio</button>
+      </div>
 
-        <label>Reunião de Jovens:</label>
-        <input id="opReuniao" placeholder="Ex: Daniel, Jonatas">
+      <div class="row small">
+        <button id="btnSave" class="btn ghost">Salvar Operadores</button>
+        <button id="btnLoad" class="btn ghost">Carregar Salvos</button>
+        <button id="btnClear" class="btn ghost">Limpar Salvos</button>
+      </div>
+    </section>
 
-        <label>Ensaio:</label>
-        <input id="opEnsaio" placeholder="Ex: Daniel, Abimael">
+    <section class="card operators">
 
-        <label>Culto de Jovens:</label>
-        <input id="opCultoJovem" placeholder="Ex: Fábio, Jonatas">
+      <h2>Operadores (uma lista separada por vírgula)</h2>
 
-        <button class="btn" onclick="gerarRodizio()">Gerar Tabelas</button>
-    </div>
-
-    <div class="results">
-
-        <div class="table-card">
-            <h3 class="title-blue">CULTO</h3>
-            <table id="tabelaCulto"></table>
+      <div class="grid-2">
+        <div>
+          <label>Culto (Dom / Ter / Qui)</label>
+          <input id="opCulto" placeholder="Abimael, Daniel, Fábio, Jonatas">
+          <label>Primeiro a tocar (opcional)</label>
+          <input id="startCulto" placeholder="Ex: Daniel">
         </div>
 
-        <div class="table-card">
-            <h3 class="title-green">REUNIÃO DE JOVENS</h3>
-            <table id="tabelaReuniao"></table>
+        <div>
+          <label>Reunião de Jovens (Dom manhã)</label>
+          <input id="opReuniao" placeholder="Daniel, Jonatas">
+          <label>Primeiro a tocar (opcional)</label>
+          <input id="startReuniao" placeholder="Ex: Jonatas">
         </div>
 
-        <div class="table-card">
-            <h3 class="title-orange">ENSAIO</h3>
-            <table id="tabelaEnsaio"></table>
+        <div>
+          <label>Ensaio (2ª sexta do mês)</label>
+          <input id="opEnsaio" placeholder="Jonatas, Daniel">
+          <label>Primeiro a tocar (opcional)</label>
+          <input id="startEnsaio" placeholder="Ex: Jonatas">
         </div>
 
-        <div class="table-card">
-            <h3 class="title-red">CULTO DE JOVENS</h3>
-            <table id="tabelaCultoJovem"></table>
+        <div>
+          <label>Culto de Jovens (2º sábado)</label>
+          <input id="opCultoJovem" placeholder="Daniel, Carlos">
+          <label>Primeiro a tocar (opcional)</label>
+          <input id="startCultoJovem" placeholder="Ex: Carlos">
         </div>
+      </div>
 
-    </div>
+    </section>
 
-</div>
+    <section class="card tables">
 
-<script src="script.js"></script>
+      <div class="table-wrap">
+        <h3 class="blue">CULTOS</h3>
+        <table id="tabelaCulto" class="sheet"></table>
+      </div>
 
+      <div class="table-wrap">
+        <h3 class="blue-light">REUNIÃO DE JOVENS</h3>
+        <table id="tabelaReuniao" class="sheet"></table>
+      </div>
+
+      <div class="table-wrap">
+        <h3 class="orange">ENSAIO</h3>
+        <table id="tabelaEnsaio" class="sheet"></table>
+      </div>
+
+      <div class="table-wrap">
+        <h3 class="red">CULTO DE JOVENS</h3>
+        <table id="tabelaCultoJovem" class="sheet"></table>
+      </div>
+
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <small>Feito para sua congregação • Salvo localmente no navegador</small>
+  </footer>
+
+  <script src="script.js"></script>
 </body>
 </html>
