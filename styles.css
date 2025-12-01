@@ -1,0 +1,135 @@
+/* PALETA IGUAL AO EXCEL */
+:root{
+  --border: #000;
+  --header-bg: #d0d0d0;
+  --section-bg: #e6e6e6;
+  --text: #000;
+  --title-bg: #c0c0c0;
+  --accent-blue: #d9e5f7;
+  --accent-orange: #f3e1d0;
+  --accent-red: #f6d6d6;
+}
+
+*{
+  box-sizing: border-box;
+}
+body{
+  font-family: Arial, Helvetica, sans-serif;
+  background:white;
+  color:var(--text);
+  margin:0;
+  padding:20px;
+}
+
+.container{
+  max-width:1200px;
+  margin:auto;
+  display:grid;
+  grid-template-columns: 1fr 420px;
+  gap:20px;
+}
+
+/* --------- TÍTULO --------- */
+header h1{
+  text-align:center;
+  font-size:20px;
+  font-weight:bold;
+  padding:8px 0;
+  background:var(--title-bg);
+  border:2px solid var(--border);
+  margin-bottom:10px;
+}
+
+/* Campos */
+.meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  justify-content:center;
+  padding:10px 0;
+}
+.meta label{
+  font-size:14px;
+  font-weight:bold;
+}
+.meta select,
+.meta input{
+  padding:6px;
+  border:1px solid var(--border);
+}
+.meta button{
+  padding:6px 10px;
+  background:#f1f1f1;
+  border:1px solid var(--border);
+  cursor:pointer;
+  font-weight:bold;
+}
+
+
+/* --------- TÍTULOS DE SEÇÕES IGUAIS À PLANILHA --------- */
+.left h2,
+.card h3{
+  background:var(--section-bg);
+  padding:6px;
+  border:2px solid var(--border);
+  font-size:15px;
+  margin:0 0 6px 0;
+  text-transform:uppercase;
+  font-weight:bold;
+}
+
+/* CORES POR SEÇÃO (como no Excel) */
+.card:nth-child(1) h3{ background:var(--accent-blue); }
+.card:nth-child(2) h3{ background:var(--accent-orange); }
+.card:nth-child(3) h3{ background:var(--accent-red); }
+
+
+/* --------- TABELAS --------- */
+table.grid{
+  width:100%;
+  border-collapse:collapse;
+}
+table.grid th,
+table.grid td{
+  border:2px solid var(--border);
+  padding:6px 6px;
+  font-size:14px;
+}
+table.grid th{
+  background:var(--header-bg);
+  font-weight:bold;
+  text-transform:uppercase;
+}
+
+/* tamanho reduzido para tabelas da direita */
+.small th, .small td{
+  padding:4px;
+  font-size:13px;
+}
+
+/* Área dos nomes */
+.config{
+  grid-column:1 / -1;
+  margin-top:20px;
+  padding:10px;
+  border:2px solid var(--border);
+  background:#fafafa;
+}
+.config h3{
+  margin-top:0;
+  font-weight:bold;
+}
+#names{
+  width:100%;
+  height:120px;
+  padding:8px;
+  border:2px solid var(--border);
+  font-family:monospace;
+}
+
+/* RESPONSIVO */
+@media(max-width:900px){
+  .container{
+    grid-template-columns:1fr;
+  }
+}
