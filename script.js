@@ -1,117 +1,128 @@
-// Função para obter todas as datas de um dia específico no mês
-function getDatesForDay(dayOfWeek, month, year) {
-    const dates = [];
-    let date = new Date(year, month, 1);
+// Novo script.js — corrige dias e faz rodízio contínuo cronológico
 
-    // Avança até chegar no dia da semana correto
-    while (date.getDay() !== dayOfWeek) {
-        date.setDate(date.getDate() + 1);
-    }
+// Prioridade de tipos para ordenação no mesmo dia
+const TYPE_PRIORITY = ['cultos','reuniaoJovens','ensaio','cultoJovens'];
 
-    // Vai pegando todas as datas desse dia no mês
-    while (date.getMonth() === month) {
-        dates.push(new Date(date));
-        date.setDate(date.getDate() + 7);
-    }
+// Mapas: tipo -> dias da semana (0=Dom,1=Seg,...,6=Sáb)
+const TYPE_DAYS = {
+  cultos: [0, 2, 4],          // domingo, terça, quinta
+  reuniaoJovens: [0],         // domingo
+  ensaio: [5],                // sexta-feira
+  cultoJovens: [6]            // sábado
+};
 
-    return dates;
+function formatDateShort(d){
+  const dias = ["jan.","fev.","mar.","abr.","mai.","jun.","jul.","ago.","set.","out.","nov.","dez."];
+  return `${d.getDate()}-${dias[d.getMonth()]}`;
 }
 
-// Formata tipo "2-nov."
-function formatDate(d) {
-    const dia = d.getDate();
-    const meses = ["jan.","fev.","mar.","abr.","mai.","jun.","jul.","ago.","set.","out.","nov.","dez."];
-    return `${dia}-${meses[d.getMonth()]}`;
+function generateMonthDates(year, monthIndex){
+  const dates = [];
+  let d = new Date(year, monthIndex, 1);
+  while (d.getMonth() === monthIndex){
+    dates.push(new Date(d));
+    d.setDate(d.getDate() + 1);
+  }
+  return dates;
 }
 
-// Aplica rodízio de nomes
-function distribuir(dates, nomes, startIndex) {
-    const result = [];
-    let idx = startIndex;
-
-    for (let i = 0; i < dates.length; i++) {
-        result.push({
-            data: dates[i],
-            nome: nomes[idx]
+// Cria lista de eventos (um item por evento — pode haver vários no mesmo dia)
+function buildEventsForMonth(year, monthIndex){
+  const dates = generateMonthDates(year, monthIndex);
+  const events = [];
+  dates.forEach(d => {
+    const w = d.getDay(); // 0..6
+    // para cada tipo, se o dia bate, adiciona evento
+    Object.keys(TYPE_DAYS).forEach(type => {
+      if (TYPE_DAYS[type].includes(w)) {
+        events.push({
+          type,
+          date: new Date(d),
+          weekday: w
         });
-
-        idx = (idx + 1) % nomes.length; // continua o rodízio
-    }
-
-    return { dados: result, nextIndex: idx };
-}
-
-// Limpa tabela
-function limparTabela(id) {
-    document.querySelector(id + " tbody").innerHTML = "";
-}
-
-// Preenche tabela
-function preencherTabela(id, lista) {
-    const tbody = document.querySelector(id + " tbody");
-
-    lista.forEach(item => {
-        const tr = document.createElement("tr");
-
-        const tdData = document.createElement("td");
-        tdData.textContent = formatDate(item.data);
-
-        const tdNome = document.createElement("td");
-        tdNome.textContent = item.nome;
-
-        tr.appendChild(tdData);
-        tr.appendChild(tdNome);
-
-        tbody.appendChild(tr);
+      }
     });
+  });
+  // Ordena por data; se mesmo dia, ordena por prioridade definida
+  events.sort((a,b) => {
+    if (a.date - b.date !== 0) return a.date - b.date;
+    return TYPE_PRIORITY.indexOf(a.type) - TYPE_PRIORITY.indexOf(b.type);
+  });
+  return events;
 }
 
-// Função principal
-function gerar() {
-    const mes = parseInt(document.getElementById("mes").value);
-    const ano = parseInt(document.getElementById("ano").value);
-
-    let nomes = document.getElementById("names").value
-        .split("\n")
-        .map(n => n.trim())
-        .filter(n => n.length > 0);
-
-    if (nomes.length === 0) {
-        alert("Digite pelo menos 1 nome!");
-        return;
-    }
-
-    // Dias da semana:
-    // Domingo=0, Segunda=1, Terça=2, Quarta=3, Quinta=4, Sexta=5, Sábado=6
-    const datasDomingo = getDatesForDay(0, mes, ano);
-    const datasTerca = getDatesForDay(2, mes, ano);
-    const datasQuinta = getDatesForDay(4, mes, ano);
-
-    // Limpar tabelas
-    limparTabela("#tblCultos");
-    limparTabela("#tblJovens");
-    limparTabela("#tblEnsaio");
-    limparTabela("#tblCultoJovens");
-
-    // Rodízio global
-    let startIndex = 0;
-
-    // CULTO (Domingos)
-    let culto = distribuir(datasDomingo, nomes, startIndex);
-    preencherTabela("#tblCultos", culto.dados);
-    startIndex = culto.nextIndex;
-
-    // REUNIÃO DE JOVENS (Terças)
-    let jovens = distribuir(datasTerca, nomes, startIndex);
-    preencherTabela("#tblJovens", jovens.dados);
-    startIndex = jovens.nextIndex;
-
-    // ENSAIO (Quintas)
-    let ensaio = distribuir(datasQuinta, nomes, startIndex);
-    preencherTabela("#tblEnsaio", ensaio.dados);
-    startIndex = ensaio.nextIndex;
-
-    // CULTO DE JOVENS (Domingos novamente)
-    let cultoJovens = distribuir(datasDomingo, nomes, startIndex);
-    preencherTabela("#tblCultoJovens", cultoJovens.dados);
+// Particiona eventos por tipo para renderizar cada tabela (mantém ordem cronológica)
+function partitionByType(assigned){
+  const out = { cultos: [], reuniaoJovens: [], ensaio: [], cultoJovens: [] };
+  assigned.forEach(e => {
+    out[e.type].push(e);
+  });
+  return out;
 }
+
+function renderTable(id, rows){
+  const tbody = document.querySelector(id + " tbody");
+  tbody.innerHTML = "";
+  rows.forEach(r=>{
+    const tr = document.createElement("tr");
+    const tdDate = document.createElement("td");
+    tdDate.textContent = formatDateShort(new Date(r.date));
+    const tdName = document.createElement("td");
+    tdName.textContent = (r.participant || "").toUpperCase();
+    tr.appendChild(tdDate);
+    tr.appendChild(tdName);
+    tbody.appendChild(tr);
+  });
+}
+
+function readNames(){
+  const raw = document.getElementById("names").value || "";
+  return raw.split(/\r?\n/).map(s=>s.trim()).filter(s=>s.length>0);
+}
+
+function gerar(){
+  const mesSelect = document.getElementById("mes");
+  const anoInput = document.getElementById("ano");
+  const monthIndex = parseInt(mesSelect.value,10); // 0-11
+  const year = parseInt(anoInput.value,10);
+
+  const nomes = readNames();
+  if(nomes.length === 0){
+    alert("Adicione pelo menos um nome na lista.");
+    return;
+  }
+
+  // cria todos os eventos do mês (um por ocorrência de tipo)
+  const events = buildEventsForMonth(year, monthIndex);
+
+  // atribui participantes em sequência (rodízio contínuo)
+  const assigned = [];
+  let idx = 0;
+  for(let i=0;i<events.length;i++){
+    assigned.push(Object.assign({}, events[i], { participant: nomes[idx % nomes.length] }));
+    idx++;
+  }
+
+  // particiona por tipo mantendo ordem cronológica e renderiza
+  const parts = partitionByType(assigned);
+  renderTable("#tblCultos", parts.cultos);
+  renderTable("#tblJovens", parts.reuniaoJovens);
+  renderTable("#tblEnsaio", parts.ensaio);
+  renderTable("#tblCultoJovens", parts.cultoJovens);
+}
+
+// Inicializa selects e valores
+(function init(){
+  const mes = document.getElementById("mes");
+  const now = new Date();
+  mes.value = now.getMonth();
+  const ano = document.getElementById("ano");
+  ano.value = now.getFullYear();
+
+  // botão gerar
+  const btn = document.querySelector('button[onclick="gerar()"]');
+  if(btn) btn.addEventListener('click', gerar);
+
+  // gerar à carga
+  gerar();
+})();
