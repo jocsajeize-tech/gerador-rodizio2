@@ -1,98 +1,74 @@
 body {
     font-family: Arial, sans-serif;
-    background: #f1f1f1;
     margin: 0;
-    padding: 0;
+    padding: 20px;
+    background: #f6f6f6;
+}
+
+h1, h2 {
+    margin-bottom: 10px;
 }
 
 .container {
     max-width: 900px;
     margin: auto;
-    padding: 20px;
-}
-
-h1 {
-    text-align: center;
-    margin-bottom: 10px;
-}
-
-h2 {
-    margin-top: 25px;
-    color: #222;
-}
-
-.box {
-    background: #fff;
-    padding: 15px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
 label {
     font-weight: bold;
     display: block;
-    margin-top: 10px;
+    margin-top: 15px;
 }
 
-input {
+input, select {
     width: 100%;
     padding: 10px;
     margin-top: 5px;
+    margin-bottom: 10px;
     border-radius: 6px;
-    border: 1px solid #888;
-    font-size: 15px;
+    border: 1px solid #bbb;
+    font-size: 16px;
+    box-sizing: border-box;
 }
 
-.line {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-}
-
-.btn {
-    background: #007AFF;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
+button {
     padding: 10px 15px;
-    cursor: pointer;
-}
-
-.btn-secondary {
-    background: #555;
+    margin: 5px 0;
+    border: none;
+    background: #004aad;
     color: white;
-    padding: 10px 15px;
+    font-size: 16px;
     border-radius: 6px;
-    border: none;
+    cursor: pointer;
+    width: 100%;
 }
 
-.btn-danger {
-    background: #d33;
-    color: #fff;
-    padding: 10px 15px;
-    border-radius: 6px;
-    border: none;
+button:hover {
+    background: #00337a;
 }
 
-.btn:hover, .btn-danger:hover, .btn-secondary:hover {
-    opacity: 0.85;
-}
-
-.tabela {
+table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 20px;
+    margin-top: 15px;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
 }
 
-.tabela th, .tabela td {
-    border: 1px solid #ccc;
-    padding: 10px;
-    text-align: center;
-    background: #fff;
+th, td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
 }
 
-.tabela th {
-    background: #007AFF;
+th {
+    background: #004aad;
     color: white;
+}
+
+.section-title {
+    margin-top: 40px;
+    font-size: 22px;
+    color: #222;
 }
