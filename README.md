@@ -1,2 +1,2 @@
-# gerador-rodizio2
+# gerador-rodizio
 Gerador automático de rodízio mensal
