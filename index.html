@@ -2,103 +2,68 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Gerador de Rodízio</title>
+
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <!-- TÍTULO PRINCIPAL -->
-    <div class="title-box">
-        RODÍZIO MÊS DE <span id="mesNome"></span> – <span id="anoSelecionado"></span>
+    <div class="header">
+        <h1>Gerador de Rodízio</h1>
+        <p>Congregação Cristã no Brasil</p>
     </div>
 
-    <!-- Seleção do mês -->
-    <div style="margin-bottom: 20px;">
+    <!-- Seleção de mês -->
+    <div class="card">
         <label>Mês:</label>
         <input type="month" id="mesSelecionado">
-        <button onclick="gerarRodizio()">Gerar Rodízio</button>
+
+        <button class="btn" onclick="gerarRodizio()">Gerar Rodízio</button>
     </div>
 
-    <!-- ÁREA DE OPERADORES -->
-    <h3>Operadores dos Rodízios</h3>
+    <!-- Operadores -->
+    <div class="card">
+        <h2>Operadores</h2>
 
-    <label>Operadores Culto (Dom/ Ter/ Qui):</label>
-    <input id="opCulto" placeholder="Exemplo: Abimael, Daniel, Fábio, Jonatas" style="width:100%">
+        <label>Culto (Dom/ Ter/ Qui):</label>
+        <input id="opCulto" placeholder="Abimael, Daniel, Fábio, Jonatas">
 
-    <br><br>
+        <label>Reunião Jovens:</label>
+        <input id="opReuniao" placeholder="Digite os nomes">
 
-    <label>Operadores Reunião Jovens:</label>
-    <input id="opReuniao" placeholder="Lista de operadores" style="width:100%">
+        <label>Ensaio:</label>
+        <input id="opEnsaio" placeholder="Digite os nomes">
 
-    <br><br>
+        <label>Culto Jovens:</label>
+        <input id="opCultoJovem" placeholder="Digite os nomes">
 
-    <label>Operadores Ensaio:</label>
-    <input id="opEnsaio" placeholder="Lista de operadores" style="width:100%">
-
-    <br><br>
-
-    <label>Operadores Culto Jovens:</label>
-    <input id="opCultoJovem" placeholder="Lista de operadores" style="width:100%">
-
-    <br><br>
-
-    <button onclick="gerarRodizio()">Gerar Tabelas</button>
-
-    <!-- TABELAS – IGUAL À PLANILHA -->
-
-    <div class="row">
-
-        <!-- CULTO -->
-        <div class="col">
-            <div class="section-title">CULTO</div>
-            <table class="table" id="tabelaCulto">
-                <tr>
-                    <th>DIA</th>
-                    <th>DATA</th>
-                    <th>IRMÃO</th>
-                </tr>
-            </table>
-        </div>
-
-        <!-- REUNIÃO DE JOVENS -->
-        <div class="col">
-            <div class="title-blue">REUNIÃO DE JOVENS</div>
-            <table class="table" id="tabelaReuniao">
-                <tr>
-                    <th>DIA</th>
-                    <th>DATA</th>
-                    <th>IRMÃO</th>
-                </tr>
-            </table>
-        </div>
-
+        <button class="btn" onclick="gerarRodizio()">Gerar Tabelas</button>
     </div>
 
-    <div class="row">
+    <!-- Tabelas -->
+    <div class="tables">
 
-        <!-- ENSAIO -->
-        <div class="col">
-            <div class="title-orange">ENSAIO</div>
-            <table class="table" id="tabelaEnsaio">
-                <tr>
-                    <th>DIA</th>
-                    <th>DATA</th>
-                    <th>IRMÃO</th>
-                </tr>
-            </table>
+        <div class="table-card">
+            <h3 class="blue">CULTO</h3>
+            <table id="tabelaCulto"></table>
         </div>
 
-        <!-- CULTO DE JOVENS -->
-        <div class="col">
-            <div class="title-red">CULTO DE JOVENS</div>
-            <table class="table" id="tabelaCultoJovem">
-                <tr>
-                    <th>DIA</th>
-                    <th>DATA</th>
-                    <th>IRMÃO</th>
-                </tr>
-            </table>
+        <div class="table-card">
+            <h3 class="green">REUNIÃO DE JOVENS</h3>
+            <table id="tabelaReuniao"></table>
+        </div>
+
+        <div class="table-card">
+            <h3 class="orange">ENSAIO</h3>
+            <table id="tabelaEnsaio"></table>
+        </div>
+
+        <div class="table-card">
+            <h3 class="red">CULTO DE JOVENS</h3>
+            <table id="tabelaCultoJovem"></table>
         </div>
 
     </div>
