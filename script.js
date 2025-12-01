@@ -1,92 +1,74 @@
 function gerarRodizio() {
 
-    const mesSelecionado = document.getElementById("mesSelecionado").value;
-    if (!mesSelecionado) return alert("Selecione um mês!");
+    const mes = document.getElementById("mesSelecionado").value;
 
-    const ano = Number(mesSelecionado.split("-")[0]);
-    const mes = Number(mesSelecionado.split("-")[1]) - 1;
+    if (!mes) return alert("Selecione um mês!");
 
-    const operadoresCulto = document.getElementById("opCulto").value.split(",").map(o => o.trim());
-    const operadoresReuniao = document.getElementById("opReuniao").value.split(",").map(o => o.trim());
-    const operadoresEnsaio = document.getElementById("opEnsaio").value.split(",").map(o => o.trim());
-    const operadoresCultoJovem = document.getElementById("opCultoJovem").value.split(",").map(o => o.trim());
+    const [ano, mesNum] = mes.split("-").map(Number);
+    const mesIndex = mesNum - 1;
 
-    gerarTabelaCulto(mes, ano, operadoresCulto);
-    gerarTabelaSimples("tabelaReuniao", operadoresReuniao, "domingo", mes, ano);
-    gerarTabelaSimples("tabelaEnsaio", operadoresEnsaio, "sexta-feira", mes, ano);
-    gerarTabelaSimples("tabelaCultoJovem", operadoresCultoJovem, "sábado", mes, ano);
+    const cultoOps = lista("opCulto");
+    const reuniaoOps = lista("opReuniao");
+    const ensaioOps = lista("opEnsaio");
+    const cultoJovemOps = lista("opCultoJovem");
+
+    gerarTabelaCulto(ano, mesIndex, cultoOps);
+    gerarTabelaSemanal("tabelaReuniao", ano, mesIndex, 0, reuniaoOps); // domingo
+    gerarTabelaSemanal("tabelaEnsaio", ano, mesIndex, 5, ensaioOps);   // sexta
+    gerarTabelaSemanal("tabelaCultoJovem", ano, mesIndex, 6, cultoJovemOps); // sábado
 }
 
-function gerarTabelaCulto(mes, ano, operadores) {
-    const tabela = document.getElementById("tabelaCulto");
-    tabela.innerHTML = "";
+function lista(id) {
+    return document.getElementById(id).value.split(",").map(s => s.trim());
+}
 
-    tabela.innerHTML += `
-        <tr><th>DIA</th><th>DATA</th><th>IRMÃO</th></tr>
-    `;
+function gerarTabelaCulto(ano, mes, ops) {
+    const t = document.getElementById("tabelaCulto");
+    t.innerHTML = "<tr><th>DIA</th><th>DATA</th><th>IRMÃO</th></tr>";
 
-    const diasCulto = [0, 2, 4]; // domingo terça quinta
-    let opIndex = 0;
+    const dias = [0, 2, 4]; // dom, ter, qui
 
-    const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+    let op = 0;
+    const total = diasMes(ano, mes);
 
-    for (let dia = 1; dia <= diasNoMes; dia++) {
-
-        const data = new Date(ano, mes, dia);
-        const diaSemana = data.getDay();
-
-        if (diasCulto.includes(diaSemana)) {
-            tabela.innerHTML += `
-                <tr>
-                    <td>${nomeDia(diaSemana)}</td>
-                    <td>${dia}/${mes + 1}</td>
-                    <td>${operadores[opIndex % operadores.length]}</td>
-                </tr>
-            `;
-            opIndex++;
+    for (let d = 1; d <= total; d++) {
+        const data = new Date(ano, mes, d);
+        if (dias.includes(data.getDay())) {
+            t.innerHTML += linha(data, ops[op % ops.length]);
+            op++;
         }
     }
 }
 
-function gerarTabelaSimples(idTabela, operadores, diaNome, mes, ano) {
-    const tabela = document.getElementById(idTabela);
-    tabela.innerHTML = "";
+function gerarTabelaSemanal(id, ano, mes, diaSemana, ops) {
+    const t = document.getElementById(id);
+    t.innerHTML = "<tr><th>DIA</th><th>DATA</th><th>IRMÃO</th></tr>";
 
-    tabela.innerHTML += `
-        <tr><th>DIA</th><th>DATA</th><th>IRMÃO</th></tr>
-    `;
+    let op = 0;
+    const total = diasMes(ano, mes);
 
-    const mapping = {
-        "domingo": 0,
-        "segunda-feira": 1,
-        "terça-feira": 2,
-        "quarta-feira": 3,
-        "quinta-feira": 4,
-        "sexta-feira": 5,
-        "sábado": 6
-    };
-
-    const diaSemana = mapping[diaNome];
-
-    const diasNoMes = new Date(ano, mes + 1, 0).getDate();
-    let opIndex = 0;
-
-    for (let dia = 1; dia <= diasNoMes; dia++) {
-        const data = new Date(ano, mes, dia);
-
+    for (let d = 1; d <= total; d++) {
+        const data = new Date(ano, mes, d);
         if (data.getDay() === diaSemana) {
-            tabela.innerHTML += `
-                <tr>
-                    <td>${diaNome}</td>
-                    <td>${dia}/${mes + 1}</td>
-                    <td>${operadores[opIndex % operadores.length]}</td>
-                </tr>
-            `;
-            opIndex++;
+            t.innerHTML += linha(data, ops[op % ops.length]);
+            op++;
         }
     }
 }
 
-function nomeDia(n) {
-    return ["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"][n];
+function linha(data, operador) {
+    return `
+        <tr>
+            <td>${diaNome(data.getDay())}</td>
+            <td>${data.getDate()}/${data.getMonth()+1}</td>
+            <td>${operador}</td>
+        </tr>`;
+}
+
+function diaNome(d) {
+    return ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"][d];
+}
+
+function diasMes(ano, mes) {
+    return new Date(ano, mes + 1, 0).getDate();
 }
