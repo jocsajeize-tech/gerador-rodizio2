@@ -1,128 +1,105 @@
-// Novo script.js — corrige dias e faz rodízio contínuo cronológico
+document.getElementById("generate").addEventListener("click", generateCalendar);
 
-// Prioridade de tipos para ordenação no mesmo dia
-const TYPE_PRIORITY = ['cultos','reuniaoJovens','ensaio','cultoJovens'];
+function generateCalendar() {
+    const month = parseInt(document.getElementById("month").value);
+    const year = parseInt(document.getElementById("year").value);
 
-// Mapas: tipo -> dias da semana (0=Dom,1=Seg,...,6=Sáb)
-const TYPE_DAYS = {
-  cultos: [0, 2, 4],          // domingo, terça, quinta
-  reuniaoJovens: [0],         // domingo
-  ensaio: [5],                // sexta-feira
-  cultoJovens: [6]            // sábado
-};
+    const dates = getAllDates(year, month);
+    const rodizioNomes = ["Abimael", "Daniel", "Fábio", "Jonatas"];
+    let indexRodizio = 0;
 
-function formatDateShort(d){
-  const dias = ["jan.","fev.","mar.","abr.","mai.","jun.","jul.","ago.","set.","out.","nov.","dez."];
-  return `${d.getDate()}-${dias[d.getMonth()]}`;
-}
+    const tbody = document.querySelector("#calendarTable tbody");
+    tbody.innerHTML = "";
 
-function generateMonthDates(year, monthIndex){
-  const dates = [];
-  let d = new Date(year, monthIndex, 1);
-  while (d.getMonth() === monthIndex){
-    dates.push(new Date(d));
-    d.setDate(d.getDate() + 1);
-  }
-  return dates;
-}
+    dates.forEach(d => {
+        const dayOfWeek = d.getDay(); // 0-dom,1-seg,2-ter...
 
-// Cria lista de eventos (um item por evento — pode haver vários no mesmo dia)
-function buildEventsForMonth(year, monthIndex){
-  const dates = generateMonthDates(year, monthIndex);
-  const events = [];
-  dates.forEach(d => {
-    const w = d.getDay(); // 0..6
-    // para cada tipo, se o dia bate, adiciona evento
-    Object.keys(TYPE_DAYS).forEach(type => {
-      if (TYPE_DAYS[type].includes(w)) {
-        events.push({
-          type,
-          date: new Date(d),
-          weekday: w
-        });
-      }
+        let atividades = [];
+
+        // ====== REUNIÃO DE JOVENS - TODO DOMINGO (MANHÃ) ======
+        if (dayOfWeek === 0) {
+            atividades.push("Reunião de Jovens");
+        }
+
+        // ====== CULTOS ======
+        // Domingo (noite)
+        if (dayOfWeek === 0) {
+            atividades.push("Culto");
+        }
+        // Terça
+        if (dayOfWeek === 2) {
+            atividades.push("Culto");
+        }
+        // Quinta
+        if (dayOfWeek === 4) {
+            atividades.push("Culto");
+        }
+
+        // ====== ENSAIO 2 — segunda sexta-feira ======
+        if (dayOfWeek === 5 && isSecondWeekdayOfMonth(d, 5)) {
+            atividades.push("Ensaio 2");
+        }
+
+        // ====== CULTO DE JOVENS — segundo sábado ======
+        if (dayOfWeek === 6 && isSecondWeekdayOfMonth(d, 6)) {
+            atividades.push("Culto de Jovens");
+        }
+
+        // Se não há nenhuma atividade, pula o dia
+        if (atividades.length === 0) return;
+
+        // Cria a linha
+        const tr = document.createElement("tr");
+
+        // Data
+        const tdData = document.createElement("td");
+        tdData.textContent = formatDate(d);
+        tr.appendChild(tdData);
+
+        // Atividades
+        const tdAtividade = document.createElement("td");
+        tdAtividade.textContent = atividades.join(", ");
+        tr.appendChild(tdAtividade);
+
+        // Rodízio
+        const tdIrmao = document.createElement("td");
+        tdIrmao.textContent = rodizioNomes[indexRodizio];
+        indexRodizio = (indexRodizio + 1) % rodizioNomes.length;
+        tr.appendChild(tdIrmao);
+
+        tbody.appendChild(tr);
     });
-  });
-  // Ordena por data; se mesmo dia, ordena por prioridade definida
-  events.sort((a,b) => {
-    if (a.date - b.date !== 0) return a.date - b.date;
-    return TYPE_PRIORITY.indexOf(a.type) - TYPE_PRIORITY.indexOf(b.type);
-  });
-  return events;
 }
 
-// Particiona eventos por tipo para renderizar cada tabela (mantém ordem cronológica)
-function partitionByType(assigned){
-  const out = { cultos: [], reuniaoJovens: [], ensaio: [], cultoJovens: [] };
-  assigned.forEach(e => {
-    out[e.type].push(e);
-  });
-  return out;
+// ======= FUNÇÕES DE APOIO =======
+
+// Lista todas as datas do mês
+function getAllDates(year, month) {
+    const dates = [];
+    const date = new Date(year, month - 1, 1);
+    while (date.getMonth() === month - 1) {
+        dates.push(new Date(date));
+        date.setDate(date.getDate() + 1);
+    }
+    return dates;
 }
 
-function renderTable(id, rows){
-  const tbody = document.querySelector(id + " tbody");
-  tbody.innerHTML = "";
-  rows.forEach(r=>{
-    const tr = document.createElement("tr");
-    const tdDate = document.createElement("td");
-    tdDate.textContent = formatDateShort(new Date(r.date));
-    const tdName = document.createElement("td");
-    tdName.textContent = (r.participant || "").toUpperCase();
-    tr.appendChild(tdDate);
-    tr.appendChild(tdName);
-    tbody.appendChild(tr);
-  });
+// Retorna "DD/MM/YYYY"
+function formatDate(d) {
+    return d.toLocaleDateString("pt-BR");
 }
 
-function readNames(){
-  const raw = document.getElementById("names").value || "";
-  return raw.split(/\r?\n/).map(s=>s.trim()).filter(s=>s.length>0);
+// Verifica se é o 2º sábado, 2ª sexta, etc.
+function isSecondWeekdayOfMonth(date, weekday) {
+    const day = date.getDate();
+    const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+
+    // Conta quantos weekdays já passaram
+    let count = 0;
+    for (let d = 1; d <= day; d++) {
+        const temp = new Date(date.getFullYear(), date.getMonth(), d);
+        if (temp.getDay() === weekday) count++;
+    }
+
+    return count === 2;
 }
-
-function gerar(){
-  const mesSelect = document.getElementById("mes");
-  const anoInput = document.getElementById("ano");
-  const monthIndex = parseInt(mesSelect.value,10); // 0-11
-  const year = parseInt(anoInput.value,10);
-
-  const nomes = readNames();
-  if(nomes.length === 0){
-    alert("Adicione pelo menos um nome na lista.");
-    return;
-  }
-
-  // cria todos os eventos do mês (um por ocorrência de tipo)
-  const events = buildEventsForMonth(year, monthIndex);
-
-  // atribui participantes em sequência (rodízio contínuo)
-  const assigned = [];
-  let idx = 0;
-  for(let i=0;i<events.length;i++){
-    assigned.push(Object.assign({}, events[i], { participant: nomes[idx % nomes.length] }));
-    idx++;
-  }
-
-  // particiona por tipo mantendo ordem cronológica e renderiza
-  const parts = partitionByType(assigned);
-  renderTable("#tblCultos", parts.cultos);
-  renderTable("#tblJovens", parts.reuniaoJovens);
-  renderTable("#tblEnsaio", parts.ensaio);
-  renderTable("#tblCultoJovens", parts.cultoJovens);
-}
-
-// Inicializa selects e valores
-(function init(){
-  const mes = document.getElementById("mes");
-  const now = new Date();
-  mes.value = now.getMonth();
-  const ano = document.getElementById("ano");
-  ano.value = now.getFullYear();
-
-  // botão gerar
-  const btn = document.querySelector('button[onclick="gerar()"]');
-  if(btn) btn.addEventListener('click', gerar);
-
-  // gerar à carga
-  gerar();
-})();
