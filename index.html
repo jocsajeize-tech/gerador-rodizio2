@@ -3,20 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Gerador de Rodízio</title>
-
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <div class="header">
-        <h1>Gerador de Rodízio</h1>
-        <p>Congregação Cristã no Brasil</p>
-    </div>
+<div class="container">
 
-    <!-- Seleção de mês -->
+    <h1>Gerador de Rodízio</h1>
+    <p class="subtitle">Congregação Cristã no Brasil</p>
+
     <div class="card">
         <label>Mês:</label>
         <input type="month" id="mesSelecionado">
@@ -24,51 +21,51 @@
         <button class="btn" onclick="gerarRodizio()">Gerar Rodízio</button>
     </div>
 
-    <!-- Operadores -->
     <div class="card">
         <h2>Operadores</h2>
 
-        <label>Culto (Dom/ Ter/ Qui):</label>
-        <input id="opCulto" placeholder="Abimael, Daniel, Fábio, Jonatas">
+        <label>Culto (Dom / Ter / Qui):</label>
+        <input id="opCulto" placeholder="Ex: Abimael, Daniel, Fábio, Jonatas">
 
-        <label>Reunião Jovens:</label>
-        <input id="opReuniao" placeholder="Digite os nomes">
+        <label>Reunião de Jovens:</label>
+        <input id="opReuniao" placeholder="Ex: Daniel, Jonatas">
 
         <label>Ensaio:</label>
-        <input id="opEnsaio" placeholder="Digite os nomes">
+        <input id="opEnsaio" placeholder="Ex: Daniel, Abimael">
 
-        <label>Culto Jovens:</label>
-        <input id="opCultoJovem" placeholder="Digite os nomes">
+        <label>Culto de Jovens:</label>
+        <input id="opCultoJovem" placeholder="Ex: Fábio, Jonatas">
 
         <button class="btn" onclick="gerarRodizio()">Gerar Tabelas</button>
     </div>
 
-    <!-- Tabelas -->
-    <div class="tables">
+    <div class="results">
 
         <div class="table-card">
-            <h3 class="blue">CULTO</h3>
+            <h3 class="title-blue">CULTO</h3>
             <table id="tabelaCulto"></table>
         </div>
 
         <div class="table-card">
-            <h3 class="green">REUNIÃO DE JOVENS</h3>
+            <h3 class="title-green">REUNIÃO DE JOVENS</h3>
             <table id="tabelaReuniao"></table>
         </div>
 
         <div class="table-card">
-            <h3 class="orange">ENSAIO</h3>
+            <h3 class="title-orange">ENSAIO</h3>
             <table id="tabelaEnsaio"></table>
         </div>
 
         <div class="table-card">
-            <h3 class="red">CULTO DE JOVENS</h3>
+            <h3 class="title-red">CULTO DE JOVENS</h3>
             <table id="tabelaCultoJovem"></table>
         </div>
 
     </div>
 
-    <script src="script.js"></script>
+</div>
+
+<script src="script.js"></script>
 
 </body>
 </html>
