@@ -27,6 +27,7 @@
   input[type="month"], select, button{padding:8px;font-size:14px}
   button{cursor:pointer;border:1px solid #888;background:#eee}
   .btn-primary{background:#2e6be6;color:#fff;border-color:#2e6be6}
+  .btn-pdf{background:#c62828;color:#fff;border-color:#b71c1c}
 
   .panel{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px}
   .card{flex:1 1 360px;padding:12px;border:1px solid var(--border);background: #fff}
@@ -44,6 +45,9 @@
   }
 </style>
 
+<!-- 🔥 PDF LIB -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
 </head>
 <body>
 <div class="wrap">
@@ -54,6 +58,9 @@
     <label for="monthPick">Mês:</label>
     <input id="monthPick" type="month" />
     <button id="btnGenerate" class="btn-primary">Gerar Rodízio</button>
+
+    <!-- 📌 BOTÃO PDF -->
+    <button id="btnPDF" class="btn-pdf">Exportar PDF</button>
   </div>
 
   <div class="panel">
@@ -121,7 +128,6 @@ function gerarRodizio(){
   const opsEnsaio = parseArea(document.getElementById('opsEnsaio').value);
   const opsCultoJov = parseArea(document.getElementById('opsCultoJovem').value);
 
-  // rota padrão SEM ponteiros — sempre começa do primeiro nome
   let pC=0, pR=0, pE=0, pJ=0;
 
   const cultoDates = allWeekdays(y, mi, [0,2,4]);
@@ -161,6 +167,20 @@ function gerarRodizio(){
   document.getElementById('resultArea').innerHTML = out;
 }
 
+// botão PDF
+document.getElementById("btnPDF").addEventListener("click", () => {
+  const area = document.getElementById("resultArea");
+
+  const opt = {
+    margin: 10,
+    filename: `Rodizio-${document.getElementById('previewMes').textContent}.pdf`,
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  html2pdf().set(opt).from(area).save();
+});
+
 // mês atual
 const now = new Date();
 document.getElementById('monthPick').value =
@@ -169,8 +189,6 @@ document.getElementById('previewMes').textContent =
   monthShort[now.getMonth()].toUpperCase() + ' - ' + now.getFullYear();
 
 document.getElementById('btnGenerate').addEventListener('click', gerarRodizio);
-
-// gerar ao abrir
 gerarRodizio();
 </script>
 
