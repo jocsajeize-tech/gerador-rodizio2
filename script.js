@@ -1,135 +1,160 @@
-document.getElementById("saveRodizios").addEventListener("click", saveRodizios);
-document.getElementById("generate").addEventListener("click", generateCalendar);
-
-/* --------------------------
-    SALVAR RODÍZIOS
---------------------------- */
-function saveRodizios() {
-    localStorage.setItem("rod_jovens", document.getElementById("rod_jovens").value);
-    localStorage.setItem("rod_culto", document.getElementById("rod_culto").value);
-    localStorage.setItem("rod_ensaio", document.getElementById("rod_ensaio").value);
-    localStorage.setItem("rod_culto_jovens", document.getElementById("rod_culto_jovens").value);
-    alert("Rodízios salvos!");
+// Retorna nome do mês
+function nomeMes(num) {
+    const meses = [
+        "JANEIRO","FEVEREIRO","MARÇO","ABRIL","MAIO","JUNHO",
+        "JULHO","AGOSTO","SETEMBRO","OUTUBRO","NOVEMBRO","DEZEMBRO"
+    ];
+    return meses[num];
 }
 
-/* --------------------------
-    CARREGA RODÍZIOS NO INÍCIO
---------------------------- */
-window.onload = function () {
-    document.getElementById("rod_jovens").value = localStorage.getItem("rod_jovens") || "";
-    document.getElementById("rod_culto").value = localStorage.getItem("rod_culto") || "";
-    document.getElementById("rod_ensaio").value = localStorage.getItem("rod_ensaio") || "";
-    document.getElementById("rod_culto_jovens").value = localStorage.getItem("rod_culto_jovens") || "";
-};
+// Função principal
+function gerarRodizio() {
 
-/* --------------------------
-    GERA O CALENDÁRIO
---------------------------- */
-function generateCalendar() {
-    const month = parseInt(document.getElementById("month").value);
-    const year = parseInt(document.getElementById("year").value);
+    // Limpar tabelas
+    limparTabela("tabelaCulto");
+    limparTabela("tabelaReuniao");
+    limparTabela("tabelaEnsaio");
+    limparTabela("tabelaCultoJovem");
 
-    const rodJovens = readRodizio("rod_jovens");
-    const rodCulto = readRodizio("rod_culto");
-    const rodEnsaio = readRodizio("rod_ensaio");
-    const rodCultoJovens = readRodizio("rod_culto_jovens");
+    // Pegar mês
+    const inputMes = document.getElementById("mesSelecionado").value;
+    if (!inputMes) {
+        alert("Selecione um mês!");
+        return;
+    }
 
-    let idxJovens = 0, idxCulto = 0, idxEnsaio = 0, idxCultoJovens = 0;
+    const ano = parseInt(inputMes.split("-")[0]);
+    const mes = parseInt(inputMes.split("-")[1]) - 1;
 
-    const tbody = document.querySelector("#calendarTable tbody");
-    tbody.innerHTML = "";
+    document.getElementById("mesNome").innerText = nomeMes(mes);
+    document.getElementById("anoSelecionado").innerText = ano;
 
-    const dates = getAllDates(year, month);
+    // Operadores
+    const opsCulto = pegarLista("opCulto");
+    const opsReuniao = pegarLista("opReuniao");
+    const opsEnsaio = pegarLista("opEnsaio");
+    const opsCultoJovem = pegarLista("opCultoJovem");
 
-    dates.forEach(date => {
-        const dow = date.getDay(); // dia da semana
+    // Rodízio: contador
+    let idxCulto = 0;
+    let idxReuniao = 0;
+    let idxEnsaio = 0;
+    let idxCultoJovem = 0;
 
-        /* ---------------- DOMINGO ---------------- */
-        if (dow === 0) {
-            // Reunião de jovens (manhã)
-            addRow(date, "Reunião de Jovens", rodJovens[idxJovens]);
-            idxJovens = (idxJovens + 1) % rodJovens.length;
+    // Descobrir 2ª sexta
+    let segundaSexta = null;
+    // Descobrir 2º sábado
+    let segundoSabado = null;
 
-            // Culto (noite)
-            addRow(date, "Culto", rodCulto[idxCulto]);
-            idxCulto = (idxCulto + 1) % rodCulto.length;
+    let sextaCount = 0;
+    let sabadoCount = 0;
+
+    const ultimoDia = new Date(ano, mes + 1, 0).getDate();
+
+    for (let dia = 1; dia <= ultimoDia; dia++) {
+
+        const data = new Date(ano, mes, dia);
+        const semana = data.getDay(); // 0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sab
+
+        // Identificar 2ª Sexta
+        if (semana === 5) {
+            sextaCount++;
+            if (sextaCount === 2) segundaSexta = dia;
         }
 
-        /* ---------------- TERÇA ---------------- */
-        if (dow === 2) {
-            addRow(date, "Culto", rodCulto[idxCulto]);
-            idxCulto = (idxCulto + 1) % rodCulto.length;
+        // Identificar 2º Sábado
+        if (semana === 6) {
+            sabadoCount++;
+            if (sabadoCount === 2) segundoSabado = dia;
+        }
+    }
+
+    // Montar tabelas
+    for (let dia = 1; dia <= ultimoDia; dia++) {
+
+        const data = new Date(ano, mes, dia);
+        const semana = data.getDay();
+
+        const diaStr = data.toLocaleDateString("pt-BR");
+
+        // CULTO – Domingo noite, Terça, Quinta
+        if (semana === 0 || semana === 2 || semana === 4) {
+            adicionarLinha("tabelaCulto",
+                nomeDia(semana),
+                diaStr,
+                opsCulto[idxCulto % opsCulto.length]
+            );
+            idxCulto++;
         }
 
-        /* ---------------- QUINTA ---------------- */
-        if (dow === 4) {
-            addRow(date, "Culto", rodCulto[idxCulto]);
-            idxCulto = (idxCulto + 1) % rodCulto.length;
+        // REUNIÃO DE JOVENS – Domingo de manhã
+        if (semana === 0) {
+            adicionarLinha("tabelaReuniao",
+                "DOMINGO (MANHÃ)",
+                diaStr,
+                opsReuniao[idxReuniao % opsReuniao.length]
+            );
+            idxReuniao++;
         }
 
-        /* ---------------- 2ª SEXTA ---------------- */
-        if (dow === 5 && isSecond(date, 5)) {
-            addRow(date, "Ensaio 2", rodEnsaio[idxEnsaio]);
-            idxEnsaio = (idxEnsaio + 1) % rodEnsaio.length;
+        // ENSAIO – 2ª Sexta
+        if (dia === segundaSexta) {
+            adicionarLinha("tabelaEnsaio",
+                "2ª SEXTA",
+                diaStr,
+                opsEnsaio[idxEnsaio % opsEnsaio.length]
+            );
+            idxEnsaio++;
         }
 
-        /* ---------------- 2º SÁBADO ---------------- */
-        if (dow === 6 && isSecond(date, 6)) {
-            addRow(date, "Culto de Jovens", rodCultoJovens[idxCultoJovens]);
-            idxCultoJovens = (idxCultoJovens + 1) % rodCultoJovens.length;
+        // CULTO DE JOVENS – 2º Sábado
+        if (dia === segundoSabado) {
+            adicionarLinha("tabelaCultoJovem",
+                "2º SÁBADO",
+                diaStr,
+                opsCultoJovem[idxCultoJovem % opsCultoJovem.length]
+            );
+            idxCultoJovem++;
         }
-    });
+
+    }
+
 }
 
-/* --------------------------
-    FUNÇÕES DE APOIO
---------------------------- */
 
-// Lê um rodízio (uma pessoa por linha)
-function readRodizio(id) {
-    return document.getElementById(id)
-        .value.split("\n")
+// Utilidades -----------------------------
+
+function limparTabela(id) {
+    const tabela = document.getElementById(id);
+    tabela.innerHTML = `
+        <tr>
+            <th>DIA</th>
+            <th>DATA</th>
+            <th>IRMÃO</th>
+        </tr>
+    `;
+}
+
+function adicionarLinha(id, dia, data, operador) {
+    const tabela = document.getElementById(id);
+    const linha = document.createElement("tr");
+
+    linha.innerHTML = `
+        <td>${dia}</td>
+        <td>${data}</td>
+        <td>${operador}</td>
+    `;
+
+    tabela.appendChild(linha);
+}
+
+function pegarLista(id) {
+    return document.getElementById(id).value
+        .split(",")
         .map(s => s.trim())
         .filter(s => s.length > 0);
 }
 
-// Insere linha na tabela
-function addRow(date, atividade, responsavel) {
-    const tbody = document.querySelector("#calendarTable tbody");
-    const tr = document.createElement("tr");
-
-    tr.innerHTML = `
-        <td>${format(date)}</td>
-        <td>${atividade}</td>
-        <td>${responsavel}</td>
-    `;
-
-    tbody.appendChild(tr);
-}
-
-// Formata data DD/MM/YYYY
-function format(d) {
-    return d.toLocaleDateString("pt-BR");
-}
-
-// Lista todas as datas do mês
-function getAllDates(year, month) {
-    const list = [];
-    const date = new Date(year, month - 1, 1);
-
-    while (date.getMonth() === month - 1) {
-        list.push(new Date(date));
-        date.setDate(date.getDate() + 1);
-    }
-    return list;
-}
-
-// Verifica se é a 2ª sexta ou 2º sábado
-function isSecond(date, weekday) {
-    let count = 0;
-    for (let d = 1; d <= date.getDate(); d++) {
-        const t = new Date(date.getFullYear(), date.getMonth(), d);
-        if (t.getDay() === weekday) count++;
-    }
-    return count === 2;
+function nomeDia(d) {
+    return ["DOMINGO", "SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO"][d];
 }
