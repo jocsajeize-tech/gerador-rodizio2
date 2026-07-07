@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Rodízio de Cultos</title>
+<title>Rodízio de Cultos - Sequência Contínua</title>
 <style>
   :root{ --border:#7a7a7a; --blue:#dbe7ff; --orange:#f4e0c8; --red:#f8d6d6; --titlebar:#cfcfcf; }
   body{ font-family: Arial, sans-serif; margin:0; background:#f7f7f7; color:#111; }
@@ -50,15 +50,8 @@
 const monthShort = ['JAN.','FEV.','MAR.','ABR.','MAI.','JUN.','JUL.','AGO.','SET.','OUT.','NOV.','DEZ.'];
 const dayName = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
 
-// Carrega os dados salvos ou define padrões
 function carregarDados() {
-    const defaultData = {
-        culto: "CESA\nROMULO\nDANIEL\nFABIO",
-        reuniao: "DANIEL F.N\nJONATAS",
-        ensaio: "JONATAS",
-        cultoJovem: "FABIO",
-        destaques: ""
-    };
+    const defaultData = { culto: "CESA\nROMULO\nDANIEL\nFABIO", reuniao: "DANIEL F.N\nJONATAS", ensaio: "JONATAS", cultoJovem: "FABIO", destaques: "" };
     const saved = JSON.parse(localStorage.getItem('rodizioDados') || JSON.stringify(defaultData));
     document.getElementById('opsCulto').value = saved.culto;
     document.getElementById('opsReuniao').value = saved.reuniao;
@@ -67,68 +60,48 @@ function carregarDados() {
     document.getElementById('opsDestaques').value = saved.destaques;
 }
 
-function salvarDados() {
-    const dados = {
-        culto: document.getElementById('opsCulto').value,
-        reuniao: document.getElementById('opsReuniao').value,
-        ensaio: document.getElementById('opsEnsaio').value,
-        cultoJovem: document.getElementById('opsCultoJovem').value,
-        destaques: document.getElementById('opsDestaques').value
-    };
-    localStorage.setItem('rodizioDados', JSON.stringify(dados));
+function contarEventosAte(y, m, diaSemana) {
+    let total = 0;
+    let data = new Date(2026, 0, 1); // Data de referência (janeiro/2026)
+    let fim = new Date(y, m, 1);
+    while (data < fim) {
+        if (diaSemana.includes(data.getDay())) total++;
+        data.setDate(data.getDate() + 1);
+    }
+    return total;
 }
 
 function gerarRodizio() {
-  salvarDados(); // Salva sempre que gera
-  const [y, m] = document.getElementById('monthPick').value.split('-').map(Number);
-  const mi = m - 1;
-  document.getElementById('previewMes').textContent = monthShort[mi] + ' - ' + y;
-  
-  const oC = document.getElementById('opsCulto').value.split('\n').filter(s => s.trim() !== "");
-  const oR = document.getElementById('opsReuniao').value.split('\n').filter(s => s.trim() !== "");
-  const oE = document.getElementById('opsEnsaio').value.split('\n').filter(s => s.trim() !== "");
-  const oJ = document.getElementById('opsCultoJovem').value.split('\n').filter(s => s.trim() !== "");
-  const dts = document.getElementById('opsDestaques').value.split('\n');
-  
-  const allDays = [];
-  for(let d=1; d<=new Date(y, m, 0).getDate(); d++){ allDays.push(new Date(y, mi, d)); }
-  
-  let pC = 0, hC = `<div class="title-bar">CULTOS</div><table class="sheet"><tr><th>DIA</th><th>DATA</th><th>IRMÃO</th></tr>`;
-  const doms = allDays.filter(d => d.getDay() === 0);
-  
-  allDays.forEach(dt => {
-    if([0, 2, 4].includes(dt.getDay())){
-      let nome = oC[pC++ % oC.length], cl = "";
-      let dataStr = dt.getDate() + '-' + monthShort[mi].toLowerCase().replace('.','');
-      
-      if (mi % 2 === 0 && dt.getDay() === 0 && doms.indexOf(dt) === 1) { nome += " — BATISMO"; cl = "class='destaque-amarelo'"; }
-      dts.forEach(item => { if(item.includes(',') && item.split(',')[0].trim() == dataStr) { nome += " — " + item.split(',')[1]; cl = "class='destaque-amarelo'"; } });
-      
-      hC += `<tr ${cl}><td>${dayName[dt.getDay()]}</td><td>${dt.getDate()}-${monthShort[mi]}</td><td>${nome}</td></tr>`;
+    const [y, m] = document.getElementById('monthPick').value.split('-').map(Number);
+    const mi = m - 1;
+    const oC = document.getElementById('opsCulto').value.split('\n').filter(s => s.trim() !== "");
+    const oR = document.getElementById('opsReuniao').value.split('\n').filter(s => s.trim() !== "");
+    const dts = document.getElementById('opsDestaques').value.split('\n');
+    
+    // Cálculo da posição inicial baseado no total de eventos passados
+    let pC = contarEventosAte(y, mi, [0, 2, 4]) % oC.length;
+    let pR = contarEventosAte(y, mi, [0]) % oR.length;
+
+    let html = `<div class="title-bar">CULTOS</div><table class="sheet"><tr><th>DIA</th><th>DATA</th><th>IRMÃO</th></tr>`;
+    for(let d=1; d<=new Date(y, m, 0).getDate(); d++){
+        let dt = new Date(y, mi, d);
+        if([0, 2, 4].includes(dt.getDay())){
+            let nome = oC[pC++ % oC.length], cl = "";
+            let dataStr = dt.getDate() + '-' + monthShort[mi].toLowerCase().replace('.','');
+            if (mi % 2 === 0 && dt.getDay() === 0 && dt.getDate() > 7 && dt.getDate() <= 14) { nome += " — BATISMO"; cl = "class='destaque-amarelo'"; }
+            dts.forEach(item => { if(item.includes(',') && item.split(',')[0].trim() == dataStr) { nome += " — " + item.split(',')[1]; cl = "class='destaque-amarelo'"; } });
+            html += `<tr ${cl}><td>${dayName[dt.getDay()]}</td><td>${dt.getDate()}-${monthShort[mi]}</td><td>${nome}</td></tr>`;
+        }
     }
-  });
-
-  let pR = 0;
-  let hR = `<div class="title-bar" style="background:var(--blue)">REUNIÃO JOVENS</div><table class="sheet"><tr><th>DATA</th><th>IRMÃO</th></tr>` + allDays.filter(d=>d.getDay()==0).map(d=>`<tr><td>${d.getDate()}-${monthShort[mi]}</td><td>${oR[pR++ % oR.length]}</td></tr>`).join('') + `</table>`;
-  let ensaioD = allDays.filter(d=>d.getDay()==5)[1];
-  let hE = `<div class="title-bar" style="background:var(--orange)">ENSAIO</div><table class="sheet"><tr><td>${ensaioD?.getDate()}-${monthShort[mi]}</td><td>${oE[0]}</td></tr></table>`;
-  let cultoJD = allDays.filter(d=>d.getDay()==6)[1];
-  let hJ = `<div class="title-bar" style="background:var(--red)">CULTO JOVENS</div><table class="sheet"><tr><td>${cultoJD?.getDate()}-${monthShort[mi]}</td><td>${oJ[0]}</td></tr></table>`;
-  
-  document.getElementById('resultArea').innerHTML = hC + "</table>" + hR + hE + hJ;
+    
+    document.getElementById('resultArea').innerHTML = html + "</table>";
+    localStorage.setItem('rodizioDados', JSON.stringify({ culto: document.getElementById('opsCulto').value, reuniao: document.getElementById('opsReuniao').value, ensaio: document.getElementById('opsEnsaio').value, cultoJovem: document.getElementById('opsCultoJovem').value, destaques: document.getElementById('opsDestaques').value }));
 }
 
-function verificarSenha() {
-  const p = document.getElementById('painelEditores');
-  if(prompt("Senha:") === "1234") p.style.display = (p.style.display === "block" ? "none" : "block");
-}
-
+function verificarSenha() { const p = document.getElementById('painelEditores'); if(prompt("Senha:") === "1234") p.style.display = (p.style.display === "block" ? "none" : "block"); }
 document.getElementById('btnGenerate').addEventListener('click', gerarRodizio);
-document.getElementById('btnPDF').addEventListener('click', () => html2pdf().from(document.getElementById("resultArea")).save());
 document.getElementById('monthPick').value = new Date().getFullYear() + '-' + String(new Date().getMonth()+1).padStart(2,'0');
-
-carregarDados();
-gerarRodizio();
+carregarDados(); gerarRodizio();
 </script>
 </body>
 </html>
