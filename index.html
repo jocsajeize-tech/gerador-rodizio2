@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Rodízio de Cultos — Sequência Dinâmica</title>
+<title>Rodízio de Cultos</title>
 <style>
   :root{ --border:#7a7a7a; --titlebar:#cfcfcf; --blue:#dbe7ff; --orange:#f4e0c8; --red:#f8d6d6; }
   body{ font-family: Arial, sans-serif; margin:0; background:#f7f7f7; color:#111; }
@@ -18,7 +18,7 @@
   .panel{display:flex;gap:16px;flex-wrap:wrap;}
   .card{flex:1 1 360px;padding:12px;border:1px solid var(--border);background: #fff}
   textarea.oper{width:100%;min-height:80px;font-size:14px;padding:8px;border:1px solid #bbb;box-sizing:border-box;}
-  .title-bar{display:block;text-align:center;padding:8px;border:1px solid var(--border);background:var(--titlebar);font-weight:700;margin-bottom:8px}
+  .title-bar{display:block;text-align:center;padding:8px;border:1px solid var(--border);background:var(--titlebar);font-weight:700;margin-top:20px;margin-bottom:8px}
   table.sheet{width:100%;border-collapse:collapse;margin:8px 0 18px;font-size:14px}
   table.sheet th, table.sheet td{border:1px solid var(--border);padding:8px}
   .destaque-amarelo{background-color:#ffeb3b; font-weight:bold; color:#d32f2f;}
@@ -66,9 +66,9 @@ function gerarRodizio() {
   const oC = document.getElementById('opsCulto').value.split('\n').filter(s => s.trim() !== "");
   const dts = document.getElementById('opsDestaques').value.split('\n');
   
-  // Cálculo linear: (total de meses desde 2026) % tamanho da lista
-  let mesesPassados = ((y - 2026) * 12) + mi;
-  let pC = mesesPassados % oC.length;
+  // Lógica: Usa o mês/ano para calcular o índice, garantindo continuidade entre meses
+  let totalMeses = ((y - 2026) * 12) + mi;
+  let pC = totalMeses % oC.length;
   
   let html = `<div class="title-bar">CULTOS</div><table class="sheet"><tr><th>DIA</th><th>DATA</th><th>IRMÃO</th></tr>`;
   
@@ -78,14 +78,16 @@ function gerarRodizio() {
       let nome = oC[pC++ % oC.length];
       let cl = "";
       let dataStr = dt.getDate() + '-' + monthShort[mi].toLowerCase().replace('.','');
-      
-      // Aplicar destaque manual se existir na lista
       dts.forEach(item => { if(item.includes(',') && item.split(',')[0].trim() == dataStr) { nome += " — " + item.split(',')[1]; cl = "class='destaque-amarelo'"; } });
-      
       html += `<tr ${cl}><td>${dayName[dt.getDay()]}</td><td>${dt.getDate()}-${monthShort[mi]}</td><td>${nome}</td></tr>`;
     }
   }
-  document.getElementById('resultArea').innerHTML = html + "</table>";
+  
+  html += `</table><div class="title-bar" style="background:var(--blue)">REUNIÃO JOVENS</div><table><tr><th>DATA</th><th>IRMÃO</th></tr></table>`;
+  html += `<div class="title-bar" style="background:var(--orange)">ENSAIO</div><table><tr><td>-</td><td>-</td></tr></table>`;
+  html += `<div class="title-bar" style="background:var(--red)">CULTO JOVENS</div><table><tr><td>-</td><td>-</td></tr></table>`;
+  
+  document.getElementById('resultArea').innerHTML = html;
 }
 
 document.getElementById('btnGenerate').addEventListener('click', gerarRodizio);
