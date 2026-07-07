@@ -1,66 +1,100 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Rodízio</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background: #f4f4f4; }
-        .wrap { max-width: 800px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #333; }
-        .controls { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 20px; }
-        textarea { width: 100%; height: 80px; margin-bottom: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
-        th { background: #eee; }
-        .btn { padding: 10px 20px; cursor: pointer; border: none; background: #2e6be6; color: white; border-radius: 4px; }
-    </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Rodízio de Cultos — Sequência Dinâmica</title>
+
+<style>
+  :root{ --border:#7a7a7a; --blue:#dbe7ff; --orange:#f4e0c8; --red:#f8d6d6; --titlebar:#cfcfcf; }
+  body{ font-family: Arial, sans-serif; margin:0; background:#f7f7f7; color:#111; }
+  .wrap{max-width:1100px;margin:18px auto;padding:16px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+  h1{font-size:28px;margin:0 0 6px;text-align:center}
+  .sub{text-align:center;color:#333;margin-bottom:12px}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;margin-bottom:12px}
+  input, button{padding:8px;font-size:14px}
+  button{cursor:pointer;border:1px solid #888;background:#eee}
+  .btn-primary{background:#2e6be6;color:#fff;border-color:#2e6be6}
+  .btn-pdf{background:#c62828;color:#fff;border-color:#b71c1c}
+  .btn-lock{background:#f0a500;color:#fff;border-color:#d49200;font-weight:bold}
+  #painelEditores{display:none;margin-bottom:12px}
+  .panel{display:flex;gap:16px;flex-wrap:wrap;}
+  .card{flex:1 1 360px;padding:12px;border:1px solid var(--border);background:#fff}
+  textarea.oper{width:100%;min-height:90px;padding:8px;border:1px solid #bbb;box-sizing:border-box;}
+  .title-bar{text-align:center;padding:8px;border:1px solid var(--border);background:var(--titlebar);font-weight:700;margin-bottom:8px}
+  table.sheet{width:100%;border-collapse:collapse;margin:8px 0 18px;font-size:14px}
+  table.sheet th, table.sheet td{border:1px solid var(--border);padding:8px}
+  .batismo-destaque{background-color:#ffeb3b; font-weight:bold; color:#d32f2f;}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 <div class="wrap">
-    <h1>Rodízio Mensal</h1>
-    <div class="controls">
-        <input type="month" id="monthPick">
-        <button class="btn" onclick="gerar()">Gerar Rodízio</button>
-    </div>
-    <div id="painelEditores" style="display:none;">
-        <label>Operadores (um por linha):</label>
-        <textarea id="listaOps">CESA&#10;ROMULO&#10;DANIEL&#10;FABIO</textarea>
-    </div>
-    <button onclick="document.getElementById('painelEditores').style.display='block'">Editar Operadores</button>
-    <div id="resultado"></div>
+  <h1>RODÍZIO MÊS DE <span id="previewMes">—</span></h1>
+  <div class="sub">Congregação Cristã no Brasil</div>
+  <div class="controls">
+    <input id="monthPick" type="month" />
+    <button id="btnGenerate" class="btn-primary">Gerar Rodízio</button>
+    <button id="btnPDF" class="btn-pdf">Exportar PDF</button>
+    <button id="btnLock" class="btn-lock" onclick="verificarSenha()">🔓 Editar</button>
+  </div>
+  <div id="painelEditores"><div class="panel"><div class="card">
+    <label><strong>Culto (Dom/Ter/Qui)</strong></label><textarea id="opsCulto" class="oper">CESA&#10;ROMULO&#10;DANIEL&#10;FABIO</textarea>
+    <label><strong>Reunião Jovens</strong></label><textarea id="opsReuniao" class="oper">DANIEL F.N&#10;JONATAS</textarea>
+    <label><strong>Ensaio</strong></label><textarea id="opsEnsaio" class="oper">JONATAS</textarea>
+    <label><strong>Culto Jovens</strong></label><textarea id="opsCultoJovem" class="oper">FABIO</textarea>
+  </div></div></div>
+  <div id="resultArea"></div>
 </div>
 
 <script>
-    function gerar() {
-        const ops = document.getElementById('listaOps').value.split('\n').filter(s => s.trim() !== "");
-        const mesAno = document.getElementById('monthPick').value.split('-');
-        const y = parseInt(mesAno[0]), m = parseInt(mesAno[1]) - 1;
-        
-        let html = "<table><tr><th>Data</th><th>Irmão</th></tr>";
-        let dia = 1, opsIdx = 0;
-        
-        while (new Date(y, m, dia).getMonth() === m) {
-            let data = new Date(y, m, dia);
-            // Pega domingos (0), terças (2) e quintas (4)
-            if ([0, 2, 4].includes(data.getDay())) {
-                let nome = ops[opsIdx % ops.length];
-                // Regra Batismo: mês ímpar (0, 2, 4...) e 2º domingo
-                if (m % 2 === 0 && data.getDay() === 0) {
-                    let domingos = [];
-                    for(let i=1; i<=31; i++) {
-                        let d = new Date(y, m, i);
-                        if(d.getMonth() === m && d.getDay() === 0) domingos.push(d.getDate());
-                    }
-                    if (data.getDate() === domingos[1]) nome += " (BATISMO)";
-                }
-                html += `<tr><td>${data.getDate()}/${m+1}</td><td>${nome}</td></tr>`;
-                opsIdx++;
-            }
-            dia++;
+const monthShort = ['JAN.','FEV.','MAR.','ABR.','MAI.','JUN.','JUL.','AGO.','SET.','OUT.','NOV.','DEZ.'];
+const dayName = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+
+function gerarRodizio() {
+  const [y, m] = document.getElementById('monthPick').value.split('-').map(Number);
+  const mi = m - 1;
+  document.getElementById('previewMes').textContent = monthShort[mi] + ' - ' + y;
+  
+  const opsCulto = document.getElementById('opsCulto').value.split('\n');
+  const allDays = [];
+  for(let d=1; d<=new Date(y, m, 0).getDate(); d++){ allDays.push(new Date(y, mi, d)); }
+  
+  // Lógica de Cultos
+  let pC = 0;
+  let html = `<div class="title-bar">CULTOS</div><table class="sheet"><tr><th>DIA</th><th>DATA</th><th>IRMÃO</th></tr>`;
+  
+  const domingos = allDays.filter(d => d.getDay() === 0);
+  
+  allDays.forEach(dt => {
+    if([0, 2, 4].includes(dt.getDay())){
+      let nome = opsCulto[pC++ % opsCulto.length];
+      let classe = "";
+      
+      // Regra Batismo: Mês ímpar (mi % 2 == 0, pois JAN=0, MAR=2...) e 2º domingo
+      if (mi % 2 === 0 && dt.getDay() === 0) {
+        if (domingos.indexOf(dt) === 1) {
+          nome += " — BATISMO";
+          classe = "class='batismo-destaque'";
         }
-        document.getElementById('resultado').innerHTML = html + "</table>";
+      }
+      
+      html += `<tr ${classe}><td>${dayName[dt.getDay()]}</td><td>${dt.getDate()}-${monthShort[mi]}</td><td>${nome}</td></tr>`;
     }
+  });
+  
+  document.getElementById('resultArea').innerHTML = html + "</table>";
+}
+
+function verificarSenha() {
+  const p = document.getElementById('painelEditores');
+  if(prompt("Senha:") === "1234") p.style.display = (p.style.display === "block" ? "none" : "block");
+}
+
+document.getElementById('btnGenerate').addEventListener('click', gerarRodizio);
+document.getElementById('btnPDF').addEventListener('click', () => html2pdf().from(document.getElementById("resultArea")).save());
+document.getElementById('monthPick').value = new Date().getFullYear() + '-' + String(new Date().getMonth()+1).padStart(2,'0');
+gerarRodizio();
 </script>
 </body>
 </html>
