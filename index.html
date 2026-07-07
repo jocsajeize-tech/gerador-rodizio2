@@ -1,80 +1,81 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Rodízio de Cultos</title>
-<style>
-  :root{ --border:#7a7a7a; --blue:#dbe7ff; --orange:#f4e0c8; --red:#f8d6d6; --titlebar:#cfcfcf; }
-  body{ font-family: Arial, sans-serif; margin:0; background:#f7f7f7; }
-  .wrap{max-width:1100px;margin:18px auto;padding:16px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.06)}
-  .controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:12px}
-  button{padding:8px;cursor:pointer}
-  .title-bar{text-align:center;padding:8px;border:1px solid var(--border);background:var(--titlebar);font-weight:700;margin-top:15px}
-  table.sheet{width:100%;border-collapse:collapse;font-size:14px}
-  table.sheet th, table.sheet td{border:1px solid var(--border);padding:8px}
-  .destaque{background-color:#ffeb3b; font-weight:bold; color:#d32f2f;}
-</style>
+    <meta charset="UTF-8">
+    <title>Rodízio de Cultos</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        .destaque { background-color: #ffeb3b; font-weight: bold; }
+        .controls { margin-bottom: 20px; }
+    </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>RODÍZIO MÊS DE <span id="previewMes"></span></h1>
-  <div class="controls">
-    <input id="monthPick" type="month" />
-    <button onclick="gerar()">Gerar</button>
-    <button onclick="document.getElementById('painel').style.display='block'">🔓 Editar</button>
-  </div>
-  <div id="painel" style="display:none;">
-    <label>Nomes (na ordem):</label>
-    <textarea id="ops" style="width:100%;height:100px;">ROMULO
+    <h1>RODÍZIO MÊS DE <span id="mesAtual"></span></h1>
+    <div class="controls">
+        <input type="month" id="selectMes">
+        <button onclick="gerarRodizio()">Gerar</button>
+        <button onclick="document.getElementById('painel').style.display='block'">Editar Nomes</button>
+    </div>
+    
+    <div id="painel" style="display:none; background:#f0f0f0; padding:10px;">
+        <h3>Definir Ordem dos Irmãos (um por linha):</h3>
+        <textarea id="listaNomes" style="width:100%; height:100px;">ROMULO
 DANIEL
 FABIO
 CESA</textarea>
-  </div>
-  <div id="resultArea"></div>
-</div>
+        <button onclick="salvarConfig()">Salvar e Gerar</button>
+    </div>
 
-<script>
-const monthShort = ['JAN.','FEV.','MAR.','ABR.','MAI.','JUN.','JUL.','AGO.','SET.','OUT.','NOV.','DEZ.'];
+    <div id="tabelaRodizio"></div>
 
-function gerar() {
-  const [y, m] = document.getElementById('monthPick').value.split('-').map(Number);
-  const mi = m - 1;
-  const nomes = document.getElementById('ops').value.split('\n').filter(s => s.trim() !== "");
-  localStorage.setItem('ordemNomes', document.getElementById('ops').value);
-  
-  // Cálculo de sequência contínua: calcula dias totais desde 01/01/2026
-  let refDate = new Date(2026, 0, 1);
-  let targetDate = new Date(y, mi, 1);
-  let diffDays = Math.floor((targetDate - refDate) / (1000 * 60 * 60 * 24));
-  // Ajuste fino: baseia-se no número de eventos (dom, ter, qui) passados
-  let eventosPassados = 0;
-  for(let i=0; i<diffDays; i++){
-      let d = new Date(2026, 0, 1 + i);
-      if([0,2,4].includes(d.getDay())) eventosPassados++;
-  }
+    <script>
+        // Função para salvar a ordem definida pelo usuário
+        function salvarConfig() {
+            localStorage.setItem('nomesOrdem', document.getElementById('listaNomes').value);
+            document.getElementById('painel').style.display = 'none';
+            gerarRodizio();
+        }
 
-  let p = eventosPassados % nomes.length;
-  let html = `<div class="title-bar">CULTOS</div><table class="sheet"><tr><th>DATA</th><th>IRMÃO</th></tr>`;
-  
-  for(let d=1; d<=new Date(y, m, 0).getDate(); d++){
-    let dt = new Date(y, mi, d);
-    if([0,2,4].includes(dt.getDay())){
-      let nome = nomes[p++ % nomes.length];
-      let cl = "";
-      if (mi % 2 === 0 && dt.getDay() === 0 && dt.getDate() > 7 && dt.getDate() <= 14) { nome += " — BATISMO"; cl = "class='destaque'"; }
-      html += `<tr ${cl}><td>${dt.getDate()}-${monthShort[mi]}</td><td>${nome}</td></tr>`;
-    }
-  }
-  
-  document.getElementById('resultArea').innerHTML = html + "</table>" + 
-    `<div class="title-bar" style="background:var(--blue)">REUNIÃO JOVENS</div><p>Lista de Reunião aqui...</p>` +
-    `<div class="title-bar" style="background:var(--orange)">ENSAIO</div><p>Lista de Ensaio aqui...</p>`;
-}
+        function gerarRodizio() {
+            const nomes = (localStorage.getItem('nomesOrdem') || document.getElementById('listaNomes').value).split('\n').filter(n => n.trim() !== "");
+            const [ano, mes] = document.getElementById('selectMes').value.split('-').map(Number);
+            
+            // Define o índice inicial para o mês escolhido de forma simples: (ano*12 + mes) % quantidade_nomes
+            // Isso garante que todo mês a sequência avance, mas seja previsível.
+            let indice = ((ano * 12) + mes) % nomes.length;
+            
+            let html = `<table><tr><th>DATA</th><th>IRMÃO</th></tr>`;
+            
+            let data = new Date(ano, mes - 1, 1);
+            while (data.getMonth() === mes - 1) {
+                // Dias de culto: Domingo(0), Terça(2), Quinta(4)
+                if ([0, 2, 4].includes(data.getDay())) {
+                    let nome = nomes[indice % nomes.length];
+                    let classe = "";
+                    
+                    // Lógica de Batismo: Domingo, segunda semana do mês, em meses ímpares
+                    if (data.getDay() === 0 && data.getDate() > 7 && data.getDate() <= 14 && (mes % 2 !== 0)) {
+                        nome += " — BATISMO";
+                        classe = "class='destaque'";
+                    }
+                    
+                    html += `<tr ${classe}><td>${data.getDate()}/${mes}</td><td>${nome}</td></tr>`;
+                    indice++; // Avança para o próximo da lista
+                }
+                data.setDate(data.getDate() + 1);
+            }
+            html += `</table>`;
+            
+            document.getElementById('tabelaRodizio').innerHTML = html;
+            document.getElementById('mesAtual').innerText = mes + '/' + ano;
+        }
 
-if(localStorage.getItem('ordemNomes')) document.getElementById('ops').value = localStorage.getItem('ordemNomes');
-document.getElementById('monthPick').value = new Date().getFullYear() + '-' + String(new Date().getMonth()+1).padStart(2,'0');
-gerar();
-</script>
+        // Inicialização
+        document.getElementById('selectMes').value = new Date().toISOString().slice(0, 7);
+        if(localStorage.getItem('nomesOrdem')) document.getElementById('listaNomes').value = localStorage.getItem('nomesOrdem');
+        gerarRodizio();
+    </script>
 </body>
 </html>
