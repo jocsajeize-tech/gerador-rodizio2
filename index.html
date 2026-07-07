@@ -5,104 +5,63 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Rodízio de Cultos</title>
 <style>
-  :root{ --border:#7a7a7a; --blue:#dbe7ff; --orange:#f4e0c8; --red:#f8d6d6; --titlebar:#cfcfcf; }
-  body{ font-family: Arial, sans-serif; margin:0; background:#f7f7f7; color:#111; }
-  .wrap{max-width:1100px;margin:18px auto;padding:16px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.06)}
-  h1{font-size:28px;margin:0 0 6px;text-align:center}
-  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;margin-bottom:12px}
-  button{cursor:pointer;padding:8px;border:1px solid #888;background:#eee}
-  .btn-primary{background:#2e6be6;color:#fff;border-color:#2e6be6}
-  .btn-pdf{background:#c62828;color:#fff;border-color:#b71c1c}
-  .btn-lock{background:#f0a500;color:#fff;border-color:#d49200;font-weight:bold}
-  #painelEditores {display:none;margin-bottom:12px}
-  .panel{display:flex;gap:16px;flex-wrap:wrap;}
-  .card{flex:1 1 360px;padding:12px;border:1px solid var(--border);background:#fff}
-  textarea.oper{width:100%;min-height:90px;padding:8px;box-sizing:border-box;}
-  .title-bar{text-align:center;padding:8px;border:1px solid var(--border);background:var(--titlebar);font-weight:700;margin-bottom:8px}
-  table.sheet{width:100%;border-collapse:collapse;margin:8px 0 18px;font-size:14px}
-  table.sheet th, table.sheet td{border:1px solid var(--border);padding:8px}
-  .destaque-amarelo{background-color:#ffeb3b; font-weight:bold; color:#d32f2f;}
+  body{font-family:Arial,sans-serif;margin:10px;background:#f4f4f4}
+  table{width:100%;border-collapse:collapse;margin-bottom:20px;background:#fff}
+  th,td{border:1px solid #ccc;padding:8px;text-align:left}
+  .title-bar{background:#ddd;font-weight:bold;padding:5px;text-align:center;border:1px solid #ccc}
+  .destaque{background-color:#ffeb3b;font-weight:bold;color:#d32f2f}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
-<div class="wrap">
-  <h1>RODÍZIO MÊS DE <span id="previewMes">—</span></h1>
-  <div class="controls">
-    <input id="monthPick" type="month" />
-    <button id="btnGenerate" class="btn-primary">Gerar Rodízio</button>
-    <button id="btnPDF" class="btn-pdf">Exportar PDF</button>
-    <button id="btnLock" class="btn-lock" onclick="verificarSenha()">🔓 Editar</button>
-  </div>
-  <div id="painelEditores" class="panel">
-    <div class="card">
-        <label><strong>Culto (Dom/Ter/Qui)</strong></label><textarea id="opsCulto" class="oper">ROMULO&#10;DANIEL&#10;FABIO&#10;CESA</textarea>
-        <label><strong>Reunião Jovens</strong></label><textarea id="opsReuniao" class="oper">DANIEL F.N&#10;JONATAS</textarea>
-        <label><strong>Ensaio</strong></label><textarea id="opsEnsaio" class="oper">JONATAS</textarea>
-        <label><strong>Culto Jovens</strong></label><textarea id="opsCultoJovem" class="oper">FABIO</textarea>
-        <label><strong>Destaques Manuais (Data,Texto)</strong></label><textarea id="opsDestaques" class="oper" placeholder="12-jul,BATISMO"></textarea>
-    </div>
-  </div>
-  <div id="resultArea"></div>
+
+<h1>RODÍZIO MÊS DE <span id="mesDisp"></span></h1>
+<input type="month" id="mesPick">
+<button onclick="render()">Gerar Rodízio</button>
+<button onclick="document.getElementById('editPanel').style.display='block'">Editar Nomes</button>
+
+<div id="editPanel" style="display:none; background:#eee; padding:10px; margin:10px 0;">
+  <textarea id="listaNomes" style="width:100%;height:100px;">ROMULO
+DANIEL
+FABIO
+CESA</textarea>
+  <button onclick="salvar()">Salvar e Gerar</button>
 </div>
 
+<div id="app"></div>
+
 <script>
-const monthShort = ['JAN.','FEV.','MAR.','ABR.','MAI.','JUN.','JUL.','AGO.','SET.','OUT.','NOV.','DEZ.'];
-const dayName = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+function salvar(){
+  localStorage.setItem('nomes', document.getElementById('listaNomes').value);
+  document.getElementById('editPanel').style.display='none';
+  render();
+}
 
-function gerarRodizio() {
-  const [y, m] = document.getElementById('monthPick').value.split('-').map(Number);
-  const mi = m - 1;
-  document.getElementById('previewMes').textContent = monthShort[mi] + ' - ' + y;
+function render(){
+  const nomes = (localStorage.getItem('nomes') || document.getElementById('listaNomes').value).split('\n').filter(n=>n.trim());
+  const [y, m] = document.getElementById('mesPick').value.split('-').map(Number);
+  document.getElementById('mesDisp').innerText = m+"/"+y;
   
-  const oC = document.getElementById('opsCulto').value.split('\n').filter(s => s.trim() !== "");
-  const oR = document.getElementById('opsReuniao').value.split('\n').filter(s => s.trim() !== "");
-  const oE = document.getElementById('opsEnsaio').value.split('\n').filter(s => s.trim() !== "");
-  const oJ = document.getElementById('opsCultoJovem').value.split('\n').filter(s => s.trim() !== "");
-  const dts = document.getElementById('opsDestaques').value.split('\n');
+  let p = (((y-2026)*12) + (m-1)) % nomes.length;
+  let html = `<div class="title-bar">CULTOS</div><table><tr><th>DATA</th><th>IRMÃO</th></tr>`;
   
-  // Cálculo de sequência baseada no total de meses passados
-  let mesesPassados = ((y - 2026) * 12) + mi;
-  let pC = mesesPassados % oC.length;
-  
-  let html = `<div class="title-bar">CULTOS</div><table class="sheet"><tr><th>DIA</th><th>DATA</th><th>IRMÃO</th></tr>`;
-  
-  for(let d=1; d<=new Date(y, m, 0).getDate(); d++){
-    let dt = new Date(y, mi, d);
-    if([0, 2, 4].includes(dt.getDay())){
-      let nome = oC[pC++ % oC.length];
+  let d = new Date(y, m-1, 1);
+  while(d.getMonth() === m-1){
+    if([0,2,4].includes(d.getDay())){
+      let nome = nomes[p++ % nomes.length];
       let cl = "";
-      let dataStr = dt.getDate() + '-' + monthShort[mi].toLowerCase().replace('.','');
-      
-      // Auto Batismo (2º Domingo de meses ímpares)
-      if (mi % 2 === 0 && dt.getDay() === 0 && dt.getDate() > 7 && dt.getDate() <= 14) { 
-        nome += " — BATISMO"; cl = "class='destaque-amarelo'"; 
-      }
-      
-      // Destaque Manual
-      dts.forEach(item => { if(item.includes(',') && item.split(',')[0].trim() == dataStr) { nome += " — " + item.split(',')[1]; cl = "class='destaque-amarelo'"; } });
-      
-      html += `<tr ${cl}><td>${dayName[dt.getDay()]}</td><td>${dt.getDate()}-${monthShort[mi]}</td><td>${nome}</td></tr>`;
+      if(d.getDay()==0 && d.getDate()>7 && d.getDate()<=14 && (m%2!=0)){ nome+=" — BATISMO"; cl="class='destaque'"; }
+      html += `<tr ${cl}><td>${d.getDate()}/${m}</td><td>${nome}</td></tr>`;
     }
+    d.setDate(d.getDate()+1);
   }
-
-  // Restaurando as outras tabelas com o design original
-  let hR = `<div class="title-bar" style="background:var(--blue)">REUNIÃO JOVENS</div><table class="sheet"><tr><th>DATA</th><th>IRMÃO</th></tr>` + 
-           new Date(y, m, 0).getDate() + `...</table>`; 
   
-  document.getElementById('resultArea').innerHTML = html + "</table>" + 
-    `<div class="title-bar" style="background:var(--blue)">REUNIÃO JOVENS</div>...` +
-    `<div class="title-bar" style="background:var(--orange)">ENSAIO</div>...`;
+  html += `</table><div class="title-bar">REUNIÃO JOVENS</div><table>...</table><div class="title-bar">ENSAIO</div><table>...</table>`;
+  document.getElementById('app').innerHTML = html;
 }
 
-function verificarSenha() {
-  const p = document.getElementById('painelEditores');
-  p.style.display = (p.style.display === "block" ? "none" : "block");
-}
-
-document.getElementById('btnGenerate').addEventListener('click', gerarRodizio);
-document.getElementById('monthPick').value = new Date().getFullYear() + '-' + String(new Date().getMonth()+1).padStart(2,'0');
-gerarRodizio();
+document.getElementById('mesPick').value = new Date().toISOString().slice(0,7);
+if(localStorage.getItem('nomes')) document.getElementById('listaNomes').value = localStorage.getItem('nomes');
+render();
 </script>
 </body>
 </html>
