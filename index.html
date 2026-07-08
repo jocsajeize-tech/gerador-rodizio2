@@ -3,84 +3,104 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Rodízio de Cultos Completo</title>
+<title>Rodízio de Cultos — Sequência Dinâmica</title>
 <style>
-  :root{ --border:#7a7a7a; --titlebar:#cfcfcf; --blue:#dbe7ff; --orange:#f4e0c8; --red:#f8d6d6; }
-  body{ font-family: Arial, sans-serif; margin:0; background:#f7f7f7; }
+  :root{ --border:#7a7a7a; --header-bg:#6f6f6f; --sheet-bg:#f3f3f3; --blue:#dbe7ff; --orange:#f4e0c8; --red:#f8d6d6; --titlebar:#cfcfcf; }
+  body{ font-family: Arial, sans-serif; margin:0; background:#f7f7f7; color:#111; }
   .wrap{max-width:1100px;margin:18px auto;padding:16px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.06)}
-  h1{text-align:center}
-  .controls{display:flex;gap:8px;justify-content:center;margin-bottom:12px}
-  .title-bar{text-align:center;padding:8px;border:1px solid var(--border);background:var(--titlebar);font-weight:700;margin-top:20px;margin-bottom:8px}
-  table.sheet{width:100%;border-collapse:collapse;margin-bottom:18px;font-size:14px}
-  table.sheet th, table.sheet td{border:1px solid var(--border);padding:8px}
+  h1{font-size:28px;margin:0 0 6px;text-align:center}
+  .sub{ text-align:center;color:#333;margin-bottom:12px }
+  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;margin-bottom:12px}
+  input[type="month"], button{padding:8px;font-size:14px}
+  button{cursor:pointer;border:1px solid #888;background:#eee}
+  .btn-primary{background:#2e6be6;color:#fff;border-color:#2e6be6}
+  .btn-pdf{background:#c62828;color:#fff;border-color:#b71c1c}
+  .btn-lock{background:#f0a500;color:#fff;border-color:#d49200;font-weight:bold}
+  #painelEditores { display: none; margin-bottom: 12px; }
+  .panel{display:flex;gap:16px;flex-wrap:wrap;}
+  .card{flex:1 1 360px;padding:12px;border:1px solid var(--border);background: #fff}
+  textarea.oper{width:100%;min-height:90px;font-size:14px;padding:8px;border:1px solid #bbb;box-sizing:border-box;}
+  .title-bar{display:block;text-align:center;padding:8px;border:1px solid var(--border);background:var(--titlebar);font-weight:700;margin-bottom:8px}
+  table.sheet{width:100%;border-collapse:collapse;margin:8px 0 18px;font-size:14px}
+  table.sheet th, table.sheet td{border:1px solid var(--border);padding:8px;vertical-align:middle}
+  table.sheet th{background:#e6e6e6;font-weight:700;text-align:left}
   .batismo-destaque { background-color: #fff380; font-weight: bold; }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 <div class="wrap">
   <h1>RODÍZIO MÊS DE <span id="previewMes">—</span></h1>
+  <div class="sub">Congregação Cristã no Brasil</div>
   <div class="controls">
     <input id="monthPick" type="month" />
-    <button onclick="gerarTudo()">Gerar Tudo</button>
+    <button id="btnGenerate" class="btn-primary">Gerar Rodízio</button>
+    <button id="btnPDF" class="btn-pdf">Exportar PDF</button>
+    <button id="btnLock" class="btn-lock" onclick="verificarSenha()">🔓 Editar Operadores</button>
+  </div>
+  <div id="painelEditores">
+    <div class="panel">
+      <div class="card">
+        <label><strong>Culto (Dom / Ter / Qui)</strong></label><textarea id="opsCulto" class="oper">CESA&#10;ROMULO&#10;DANIEL&#10;FABIO</textarea>
+        <label><strong>Reunião de Jovens</strong></label><textarea id="opsReuniao" class="oper">DANIEL F.N&#10;JONATAS</textarea>
+        <label><strong>Ensaio Local</strong></label><textarea id="opsEnsaio" class="oper">JONATAS</textarea>
+        <label><strong>Culto de Jovens</strong></label><textarea id="opsCultoJovem" class="oper">FABIO</textarea>
+      </div>
+    </div>
   </div>
   <div id="resultArea"></div>
 </div>
 
 <script>
 const monthShort = ['JAN.','FEV.','MAR.','ABR.','MAI.','JUN.','JUL.','AGO.','SET.','OUT.','NOV.','DEZ.'];
+const dayName = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+const SENHA_CORRETA = "1234";
 
-function gerarTudo() {
+function verificarSenha() {
+  const p = document.getElementById('painelEditores');
+  const b = document.getElementById('btnLock');
+  if(p.style.display === "block"){ p.style.display="none"; b.textContent="🔓 Editar Operadores"; }
+  else if(prompt("Senha:") === SENHA_CORRETA){ p.style.display="block"; b.textContent="🔒 Fechar Editor"; }
+  else { alert("Senha incorreta!"); }
+}
+
+function gerarRodizio() {
   const [y, m] = document.getElementById('monthPick').value.split('-').map(Number);
   const mi = m - 1;
-  document.getElementById('previewMes').textContent = m + "/" + y;
-
-  // Listas fixas (pode substituir pelos nomes reais)
-  const listaCulto = ["CESA", "ROMULO", "DANIEL", "FABIO"];
-  const listaJovem = ["DANIEL F.N", "JONATAS"];
-  const listaEnsaio = ["JONATAS"];
-  const listaCultoJovem = ["FABIO"];
-
-  let html = `<div class="title-bar">CULTOS</div><table class="sheet"><tr><th>DATA</th><th>IRMÃO</th></tr>`;
+  const oC = document.getElementById('opsCulto').value.split('\n').filter(s => s.trim());
+  const oR = document.getElementById('opsReuniao').value.split('\n').filter(s => s.trim());
+  const oE = document.getElementById('opsEnsaio').value.split('\n').filter(s => s.trim());
+  const oJ = document.getElementById('opsCultoJovem').value.split('\n').filter(s => s.trim());
   
-  let domingos = [];
+  document.getElementById('previewMes').textContent = monthShort[mi] + ' - ' + y;
+  
+  // Lógica Cultos + Batismo
+  let doms = [];
+  for(let d=1; d<=31; d++){ let dt = new Date(y, mi, d); if(dt.getMonth()===mi && dt.getDay()===0) doms.push(dt.getDate()); }
+  let pC = 0, html = `<div class="title-bar">CULTOS</div><table class="sheet"><tr><th>DIA</th><th>DATA</th><th>IRMÃO</th></tr>`;
   for(let d=1; d<=31; d++){
-    let dt = new Date(y, mi, d);
-    if(dt.getMonth() === mi && dt.getDay() === 0) domingos.push(dt);
-  }
-
-  let pC = 0;
-  for(let d=1; d<=31; d++){
-    let dt = new Date(y, mi, d);
-    if(dt.getMonth() !== mi) break;
+    let dt = new Date(y, mi, d); if(dt.getMonth() !== mi) break;
     if([0, 2, 4].includes(dt.getDay())){
-      let nome = listaCulto[pC++ % listaCulto.length];
-      let cls = "";
-      if(m % 2 !== 0 && dt.getDate() === domingos[1].getDate()){
-        nome += " — BATISMO"; cls = "class='batismo-destaque'";
-      }
-      html += `<tr ${cls}><td>${dt.getDate()}-JUL.</td><td>${nome}</td></tr>`;
+      let nome = oC[pC++ % oC.length], cls = "";
+      if (m % 2 !== 0 && dt.getDay() === 0 && dt.getDate() === doms[1]) { nome += " — BATISMO"; cls = "class='batismo-destaque'"; }
+      html += `<tr ${cls}><td>${dayName[dt.getDay()]}</td><td>${dt.getDate()}-${monthShort[mi]}</td><td>${nome}</td></tr>`;
     }
   }
   html += `</table>`;
-
-  // Tabela Reunião Jovens
+  
+  // Reunião, Ensaio, Culto Jovens (Mantendo sua estrutura original)
   html += `<div class="title-bar" style="background:var(--blue)">REUNIÃO JOVENS</div><table class="sheet"><tr><th>DATA</th><th>IRMÃO</th></tr>`;
-  domingos.forEach((d, i) => {
-    html += `<tr><td>${d.getDate()}-JUL.</td><td>${listaJovem[i % listaJovem.length]}</td></tr>`;
-  });
-  html += `</table>`;
-
-  // Tabela Ensaio
-  html += `<div class="title-bar" style="background:var(--orange)">ENSAIO</div><table class="sheet"><tr><th>DATA</th><th>IRMÃO</th></tr><tr><td>-</td><td>${listaEnsaio[0]}</td></tr></table>`;
-
-  // Tabela Culto Jovens
-  html += `<div class="title-bar" style="background:var(--red)">CULTO JOVENS</div><table class="sheet"><tr><th>DATA</th><th>IRMÃO</th></tr><tr><td>-</td><td>${listaCultoJovem[0]}</td></tr></table>`;
-
+  doms.forEach((d,i) => html += `<tr><td>${d}-${monthShort[mi]}</td><td>${oR[i % oR.length]}</td></tr>`);
+  html += `</table><div class="title-bar" style="background:var(--orange)">ENSAIO</div><table class="sheet"><tr><td>-</td><td>${oE[0]}</td></tr></table>`;
+  html += `<div class="title-bar" style="background:var(--red)">CULTO JOVENS</div><table class="sheet"><tr><td>-</td><td>${oJ[0]}</td></tr></table>`;
+  
   document.getElementById('resultArea').innerHTML = html;
 }
 
-document.getElementById('monthPick').value = new Date().toISOString().slice(0,7);
-gerarTudo();
+document.getElementById('btnGenerate').addEventListener('click', gerarRodizio);
+document.getElementById('btnPDF').addEventListener('click', () => html2pdf().from(document.getElementById("resultArea")).save());
+document.getElementById('monthPick').value = new Date().getFullYear() + '-' + String(new Date().getMonth()+1).padStart(2,'0');
+gerarRodizio();
 </script>
 </body>
 </html>
