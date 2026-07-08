@@ -2,96 +2,35 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Rodízio Completo</title>
+<title>Rodízio Fixo</title>
 <style>
-  :root{ --border:#7a7a7a; --blue:#dbe7ff; --orange:#f4e0c8; --red:#f8d6d6; --titlebar:#cfcfcf; }
-  body{ font-family: Arial, sans-serif; margin:0; background:#f7f7f7; }
-  .wrap{max-width:1100px;margin:18px auto;padding:16px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.06)}
-  .controls{display:flex;gap:8px;justify-content:center;margin-bottom:12px}
-  .panel{display:none; margin-bottom:15px; border:1px solid #ccc; padding:10px;}
-  textarea.oper{width:100%; height:80px;}
-  .title-bar{text-align:center;padding:8px;background:var(--titlebar);font-weight:700;margin-top:15px}
-  table.sheet{width:100%;border-collapse:collapse;font-size:14px}
-  table.sheet th, table.sheet td{border:1px solid var(--border);padding:8px}
-  .destaque{background-color:#ffeb3b; font-weight:bold;}
+  body{font-family:sans-serif; padding:20px;}
+  textarea{width:100%; height:60px;}
+  table{width:100%; border-collapse:collapse; margin-bottom:20px;}
+  th, td{border:1px solid #000; padding:8px;}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
-<div class="wrap">
-  <h1>RODÍZIO: <span id="mesAtual">-</span></h1>
-  <div class="controls">
-    <input id="monthPick" type="month" />
-    <button onclick="gerarTudo()">Gerar Rodízio</button>
-    <button onclick="document.getElementById('painel').style.display='block'">⚙️ Editar Listas</button>
-  </div>
-  
-  <div id="painel" class="panel">
-    <label>Listas (Ordem Fixa):</label>
-    <textarea id="opsCulto" class="oper">CESA&#10;ROMULO&#10;DANIEL&#10;FABIO</textarea>
-    <textarea id="opsReuniao" class="oper">DANIEL F.N&#10;JONATAS</textarea>
-    <textarea id="opsEnsaio" class="oper">JONATAS</textarea>
-    <textarea id="opsJovem" class="oper">FABIO</textarea>
-    <button onclick="salvarTudo()">Salvar e Atualizar</button>
-  </div>
 
-  <div id="resultArea"></div>
-</div>
+<h3>Editores</h3>
+<textarea id="listCulto">CESA&#10;ROMULO&#10;DANIEL&#10;FABIO</textarea>
+<button onclick="render()">Gerar Rodízio</button>
+
+<div id="saida"></div>
 
 <script>
-function salvarTudo() {
-    localStorage.setItem('c', document.getElementById('opsCulto').value);
-    localStorage.setItem('r', document.getElementById('opsReuniao').value);
-    localStorage.setItem('e', document.getElementById('opsEnsaio').value);
-    localStorage.setItem('j', document.getElementById('opsJovem').value);
-    gerarTudo();
+function render() {
+  const lista = document.getElementById('listCulto').value.split('\n');
+  
+  let html = "<h3>CULTOS</h3><table>";
+  // Apenas lista o que esta na caixa de texto, na ordem exata
+  lista.forEach((nome, i) => {
+    html += `<tr><td>${i+1}</td><td>${nome}</td></tr>`;
+  });
+  html += "</table>";
+  
+  document.getElementById('saida').innerHTML = html;
 }
-
-function gerarTudo() {
-    // Carrega dados salvos
-    document.getElementById('opsCulto').value = localStorage.getItem('c') || "CESA\nROMULO\nDANIEL\nFABIO";
-    const listaC = document.getElementById('opsCulto').value.split('\n').filter(s=>s.trim());
-    const listaR = (localStorage.getItem('r') || "DANIEL F.N\nJONATAS").split('\n').filter(s=>s.trim());
-    const [y, m] = document.getElementById('monthPick').value.split('-').map(Number);
-    const mi = m - 1;
-    
-    // Continuidade: conta cultos desde 01/01/2026
-    let totalC = 0;
-    for(let d = new Date(2026,0,1); d < new Date(y, mi, 1); d.setDate(d.getDate()+1)) {
-        if([0,2,4].includes(d.getDay())) totalC++;
-    }
-
-    // 1. Tabela Cultos
-    let html = `<div class="title-bar">CULTOS</div><table class="sheet"><tr><th>DATA</th><th>IRMÃO</th></tr>`;
-    let doms = [];
-    for(let i=1; i<=31; i++){
-        let dt = new Date(y, mi, i);
-        if(dt.getMonth() !== mi) break;
-        if(dt.getDay() === 0) doms.push(dt);
-        if([0,2,4].includes(dt.getDay())){
-            let nome = listaC[totalC % listaC.length];
-            if(mi%2==0 && dt.getDay()==0 && doms.length==2) nome += " — BATISMO";
-            html += `<tr><td>${dt.getDate()}/${m}</td><td>${nome}</td></tr>`;
-            totalC++;
-        }
-    }
-    
-    // 2. Reunião Jovens
-    html += `<div class="title-bar" style="background:var(--blue)">REUNIÃO JOVENS</div><table class="sheet">` + doms.map((d,i) => `<tr><td>${d.getDate()}/${m}</td><td>${listaR[i % listaR.length]}</td></tr>`).join('') + `</table>`;
-    
-    // 3. Ensaio e Culto Jovem (Mantidos como solicitado)
-    html += `<div class="title-bar" style="background:var(--orange)">ENSAIO</div><table class="sheet"><tr><td>-</td><td>${localStorage.getItem('e')}</td></tr></table>`;
-    html += `<div class="title-bar" style="background:var(--red)">CULTO JOVEM</div><table class="sheet"><tr><td>-</td><td>${localStorage.getItem('j')}</td></tr></table>`;
-    
-    document.getElementById('resultArea').innerHTML = html;
-    document.getElementById('mesAtual').textContent = m + "/" + y;
-}
-
-window.onload = () => { 
-    document.getElementById('monthPick').value = new Date().toISOString().slice(0,7);
-    gerarTudo(); 
-};
 </script>
 </body>
 </html>
