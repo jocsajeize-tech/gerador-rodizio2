@@ -3,16 +3,15 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Rodízio CCB - Sequência Fixa</title>
+<title>Rodízio Completo</title>
 <style>
   :root{ --border:#7a7a7a; --blue:#dbe7ff; --orange:#f4e0c8; --red:#f8d6d6; --titlebar:#cfcfcf; }
   body{ font-family: Arial, sans-serif; margin:0; background:#f7f7f7; }
   .wrap{max-width:1100px;margin:18px auto;padding:16px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.06)}
-  h1{font-size:28px;text-align:center}
   .controls{display:flex;gap:8px;justify-content:center;margin-bottom:12px}
-  #painelEditores {display:none; margin-bottom:12px; border:1px solid #ccc; padding:10px;}
-  textarea.oper{width:100%; height:80px; margin-bottom:10px;}
-  .title-bar{text-align:center;padding:8px;border:1px solid var(--border);background:var(--titlebar);font-weight:700;margin-top:15px}
+  .panel{display:none; margin-bottom:15px; border:1px solid #ccc; padding:10px;}
+  textarea.oper{width:100%; height:80px;}
+  .title-bar{text-align:center;padding:8px;background:var(--titlebar);font-weight:700;margin-top:15px}
   table.sheet{width:100%;border-collapse:collapse;font-size:14px}
   table.sheet th, table.sheet td{border:1px solid var(--border);padding:8px}
   .destaque{background-color:#ffeb3b; font-weight:bold;}
@@ -21,72 +20,77 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>RODÍZIO MÊS DE <span id="previewMes">-</span></h1>
+  <h1>RODÍZIO: <span id="mesAtual">-</span></h1>
   <div class="controls">
     <input id="monthPick" type="month" />
-    <button onclick="gerarRodizio()">Gerar Rodízio</button>
-    <button onclick="document.getElementById('painelEditores').style.display='block'">⚙️ Editar Listas</button>
+    <button onclick="gerarTudo()">Gerar Rodízio</button>
+    <button onclick="document.getElementById('painel').style.display='block'">⚙️ Editar Listas</button>
   </div>
   
-  <div id="painelEditores">
-    <label>Ordem da Lista de Cultos:</label>
-    <textarea id="opsCulto" class="oper">CESA
-ROMULO
-DANIEL
-FABIO</textarea>
-    <button onclick="salvarTudo()">Salvar Ordem e Recalcular</button>
+  <div id="painel" class="panel">
+    <label>Listas (Ordem Fixa):</label>
+    <textarea id="opsCulto" class="oper">CESA&#10;ROMULO&#10;DANIEL&#10;FABIO</textarea>
+    <textarea id="opsReuniao" class="oper">DANIEL F.N&#10;JONATAS</textarea>
+    <textarea id="opsEnsaio" class="oper">JONATAS</textarea>
+    <textarea id="opsJovem" class="oper">FABIO</textarea>
+    <button onclick="salvarTudo()">Salvar e Atualizar</button>
   </div>
 
   <div id="resultArea"></div>
 </div>
 
 <script>
-// Carrega as listas salvas ou usa padrão
-function carregar() {
-    const saved = localStorage.getItem('minha_ordem');
-    if(saved) document.getElementById('opsCulto').value = saved;
-}
-
 function salvarTudo() {
-    localStorage.setItem('minha_ordem', document.getElementById('opsCulto').value);
-    alert("Ordem salva com sucesso!");
-    gerarRodizio();
+    localStorage.setItem('c', document.getElementById('opsCulto').value);
+    localStorage.setItem('r', document.getElementById('opsReuniao').value);
+    localStorage.setItem('e', document.getElementById('opsEnsaio').value);
+    localStorage.setItem('j', document.getElementById('opsJovem').value);
+    gerarTudo();
 }
 
-function gerarRodizio() {
+function gerarTudo() {
+    // Carrega dados salvos
+    document.getElementById('opsCulto').value = localStorage.getItem('c') || "CESA\nROMULO\nDANIEL\nFABIO";
+    const listaC = document.getElementById('opsCulto').value.split('\n').filter(s=>s.trim());
+    const listaR = (localStorage.getItem('r') || "DANIEL F.N\nJONATAS").split('\n').filter(s=>s.trim());
     const [y, m] = document.getElementById('monthPick').value.split('-').map(Number);
     const mi = m - 1;
-    const lista = document.getElementById('opsCulto').value.split('\n').filter(s=>s.trim());
     
-    // Calcula a sequência contínua baseada em dias de culto (0=Dom, 2=Ter, 4=Qui)
-    let totalCultosPassados = 0;
-    let dataReferencia = new Date(2026, 0, 1); // Data base: 01/01/2026
-    let dataAtual = new Date(y, mi, 1);
-    
-    // Conta quantos dias de culto houve desde a referência até o dia 1 do mês escolhido
-    for(let d = new Date(dataReferencia); d < dataAtual; d.setDate(d.getDate() + 1)) {
-        if([0, 2, 4].includes(d.getDay())) totalCultosPassados++;
+    // Continuidade: conta cultos desde 01/01/2026
+    let totalC = 0;
+    for(let d = new Date(2026,0,1); d < new Date(y, mi, 1); d.setDate(d.getDate()+1)) {
+        if([0,2,4].includes(d.getDay())) totalC++;
     }
 
-    // Gerar tabela
+    // 1. Tabela Cultos
     let html = `<div class="title-bar">CULTOS</div><table class="sheet"><tr><th>DATA</th><th>IRMÃO</th></tr>`;
+    let doms = [];
     for(let i=1; i<=31; i++){
         let dt = new Date(y, mi, i);
         if(dt.getMonth() !== mi) break;
-        if([0, 2, 4].includes(dt.getDay())){
-            let nome = lista[totalCultosPassados % lista.length];
+        if(dt.getDay() === 0) doms.push(dt);
+        if([0,2,4].includes(dt.getDay())){
+            let nome = listaC[totalC % listaC.length];
+            if(mi%2==0 && dt.getDay()==0 && doms.length==2) nome += " — BATISMO";
             html += `<tr><td>${dt.getDate()}/${m}</td><td>${nome}</td></tr>`;
-            totalCultosPassados++;
+            totalC++;
         }
     }
-    document.getElementById('resultArea').innerHTML = html + "</table>";
-    document.getElementById('previewMes').textContent = m + "/" + y;
+    
+    // 2. Reunião Jovens
+    html += `<div class="title-bar" style="background:var(--blue)">REUNIÃO JOVENS</div><table class="sheet">` + doms.map((d,i) => `<tr><td>${d.getDate()}/${m}</td><td>${listaR[i % listaR.length]}</td></tr>`).join('') + `</table>`;
+    
+    // 3. Ensaio e Culto Jovem (Mantidos como solicitado)
+    html += `<div class="title-bar" style="background:var(--orange)">ENSAIO</div><table class="sheet"><tr><td>-</td><td>${localStorage.getItem('e')}</td></tr></table>`;
+    html += `<div class="title-bar" style="background:var(--red)">CULTO JOVEM</div><table class="sheet"><tr><td>-</td><td>${localStorage.getItem('j')}</td></tr></table>`;
+    
+    document.getElementById('resultArea').innerHTML = html;
+    document.getElementById('mesAtual').textContent = m + "/" + y;
 }
 
 window.onload = () => { 
-    carregar(); 
     document.getElementById('monthPick').value = new Date().toISOString().slice(0,7);
-    gerarRodizio(); 
+    gerarTudo(); 
 };
 </script>
 </body>
