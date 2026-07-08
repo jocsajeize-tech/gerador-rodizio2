@@ -217,7 +217,6 @@ function sectionHTML(title, color, rows){
   return html;
 }
 
-// CORREÇÃO 1: Carrega os dados salvos globalmente de forma que as listas editadas nunca se percam
 function obterDadosReferencia() {
   const refSalva = localStorage.getItem('ccb_ref_data');
   if (refSalva) {
@@ -225,7 +224,7 @@ function obterDadosReferencia() {
   }
   return {
     year: 2026,
-    month: 0, 
+    month: 5, 
     opsCulto: ["CESA", "ROMULO", "DANIEL", "FABIO"],
     opsReuniao: ["DANIEL F.N", "JONATAS"],
     opsEnsaio: ["JONATAS"],
@@ -241,13 +240,12 @@ function carregarCamposInterface() {
   document.getElementById('opsCultoJovem').value = dados.opsCultoJovem.join('\n');
 }
 
+// MUDANÇA REALIZADA: Garante que as listas digitadas atualizem diretamente o objeto de referência respeitando a ordem exata
 function gerenciarMudancaEdicao(anoAlvo, mesAlvo) {
-  // Salva permanentemente as alterações no LocalStorage para manter a ordem definida pelo usuário
   if (document.getElementById('painelEditores').style.display === "block" || !localStorage.getItem('ccb_ref_data')) {
-    const dadosAntigos = obterDadosReferencia();
     const novaRef = {
-      year: dadosAntigos.year, 
-      month: dadosAntigos.month,
+      year: anoAlvo,
+      month: mesAlvo,
       opsCulto: parseArea(document.getElementById('opsCulto').value),
       opsReuniao: parseArea(document.getElementById('opsReuniao').value),
       opsEnsaio: parseArea(document.getElementById('opsEnsaio').value),
@@ -273,7 +271,7 @@ function gerarRodizio() {
     return;
   }
 
-  // CORREÇÃO 2: Cálculo contínuo baseado na data fixa estável para que os meses sigam em sequência real
+  // MUDANÇA REALIZADA: Ajuste no cálculo para que o primeiro item do mês selecionado obedeça estritamente ao início da lista ativa salva
   let cultosPassados = countEventsBetween(ref.year, ref.month, y, mi, [0, 2, 4]);
   let pC = (cultosPassados % ref.opsCulto.length + ref.opsCulto.length) % ref.opsCulto.length;
 
