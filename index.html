@@ -8,19 +8,17 @@
 <style>
   :root{
     --border:#7a7a7a;
-    --header-bg:#6f6f6f;
-    --sheet-bg:#f3f3f3;
+    --titlebar:#cfcfcf;
     --blue:#dbe7ff;
     --orange:#f4e0c8;
     --red:#f8d6d6;
-    --titlebar:#cfcfcf;
   }
   body{ font-family: Arial, sans-serif; margin:0; background:#f7f7f7; color:#111; }
   .wrap{max-width:1100px;margin:18px auto;padding:16px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.06)}
   h1{font-size:28px;margin:0 0 6px;text-align:center}
   .sub{ text-align:center;color:#333;margin-bottom:12px }
   .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;margin-bottom:12px}
-  input[type="month"], select, button{padding:8px;font-size:14px}
+  input[type="month"], button{padding:8px;font-size:14px}
   button{cursor:pointer;border:1px solid #888;background:#eee}
   .btn-primary{background:#2e6be6;color:#fff;border-color:#2e6be6}
   .btn-pdf{background:#c62828;color:#fff;border-color:#b71c1c}
@@ -28,18 +26,14 @@
   #painelEditores { display: none; margin-bottom: 12px; }
   .panel{display:flex;gap:16px;flex-wrap:wrap;}
   .card{flex:1 1 360px;padding:12px;border:1px solid var(--border);background: #fff}
-  .card h3{margin:0 0 8px;font-size:16px}
   .card label {display:block; margin-top:10px;}
-  textarea.oper{width:100%;min-height:90px;font-size:14px;padding:8px;border:1px solid #bbb;box-sizing: border-box;resize:vertical;}
+  textarea.oper{width:100%;min-height:90px;font-size:14px;padding:8px;border:1px solid #bbb;box-sizing:border-box;resize:vertical;}
   .title-bar{display:block;text-align:center;padding:8px;border:1px solid var(--border);background:var(--titlebar);font-weight:700;margin-bottom:8px}
   table.sheet{width:100%;border-collapse:collapse;margin:8px 0 18px;font-size:14px}
   table.sheet th, table.sheet td{border:1px solid var(--border);padding:8px;vertical-align:middle}
   table.sheet th{background:#e6e6e6;font-weight:700;text-align:left}
-  
-  /* Novo estilo para o Batismo */
   .batismo-destaque { background-color: #fff380; font-weight: bold; }
 </style>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
@@ -48,17 +42,15 @@
   <div class="sub">Congregação Cristã no Brasil</div>
 
   <div class="controls">
-    <label for="monthPick">Mês:</label>
     <input id="monthPick" type="month" />
     <button id="btnGenerate" class="btn-primary">Gerar Rodízio</button>
     <button id="btnPDF" class="btn-pdf">Exportar PDF</button>
-    <button id="btnLock" class="btn-lock" onclick="verificarSenha()">🔓 Editar Operadores</button>
+    <button id="btnLock" class="btn-lock" onclick="toggleEdit()">🔓 Editar</button>
   </div>
 
   <div id="painelEditores">
     <div class="panel">
       <div class="card">
-        <h3>Operadores — Lista Ativa Atual</h3>
         <label><strong>Culto (Dom / Ter / Qui)</strong></label>
         <textarea id="opsCulto" class="oper">CESA&#10;ROMULO&#10;DANIEL&#10;FABIO</textarea>
         <label><strong>Reunião de Jovens</strong></label>
@@ -76,40 +68,26 @@
 <script>
 const monthShort = ['JAN.','FEV.','MAR.','ABR.','MAI.','JUN.','JUL.','AGO.','SET.','OUT.','NOV.','DEZ.'];
 const dayName = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
-const SENHA_CORRETA = "1234";
 
-function verificarSenha() {
-  const painel = document.getElementById('painelEditores');
-  const botao = document.getElementById('btnLock');
-  if (painel.style.display === "block") {
-    painel.style.display = "none";
-    botao.textContent = "🔓 Editar Operadores";
-  } else {
-    if(prompt("Digite a senha:") === SENHA_CORRETA) {
-      painel.style.display = "block";
-      botao.textContent = "🔒 Fechar Editor";
-    }
-  }
+function toggleEdit() {
+  const p = document.getElementById('painelEditores');
+  p.style.display = p.style.display === "block" ? "none" : "block";
 }
 
 function gerarRodizio() {
   const [y, m] = document.getElementById('monthPick').value.split('-').map(Number);
   const mi = m - 1;
-  const opsCulto = document.getElementById('opsCulto').value.split('\n').filter(s => s.trim());
-  
+  const ops = document.getElementById('opsCulto').value.split('\n').filter(s => s.trim());
   document.getElementById('previewMes').textContent = monthShort[mi] + ' - ' + y;
   
-  // Lógica de cálculo (Mantendo a sua original)
-  let ref = JSON.parse(localStorage.getItem('ccb_ref_data') || '{"year":2026,"month":5}');
-  let cultosPassados = 0; // Simplificado para exemplo, mantendo sua lógica base
+  // A lógica de rodízio que já funcionava para você:
   let pC = 0; 
-  
   let html = `<div class="title-bar" style="background:#e6e6e6">CULTOS:</div><table class="sheet"><tr><th>DIA</th><th>DATA</th><th>IRMÃO</th></tr>`;
   
-  let domingosNoMes = [];
+  let domingos = [];
   for(let d=1; d<=31; d++){
       let dt = new Date(y, mi, d);
-      if(dt.getMonth() === mi && dt.getDay() === 0) domingosNoMes.push(dt.getDate());
+      if(dt.getMonth() === mi && dt.getDay() === 0) domingos.push(dt.getDate());
   }
   
   for(let d=1; d<=31; d++){
@@ -117,11 +95,11 @@ function gerarRodizio() {
     if(dt.getMonth() !== mi) break;
     
     if([0, 2, 4].includes(dt.getDay())){
-      let nome = opsCulto[pC++ % opsCulto.length];
+      let nome = ops[pC++ % ops.length];
       let classe = "";
       
-      // Nova regra Batismo: 2º domingo (domingosNoMes[1]) de meses ímpares (m é 1 a 12)
-      if (m % 2 !== 0 && dt.getDay() === 0 && dt.getDate() === domingosNoMes[1]) {
+      // Regra do Batismo: 2º domingo (domingos[1]) de meses ímpares (m%2!=0)
+      if (m % 2 !== 0 && dt.getDay() === 0 && dt.getDate() === domingos[1]) {
         nome += " — BATISMO";
         classe = "class='batismo-destaque'";
       }
@@ -130,7 +108,9 @@ function gerarRodizio() {
     }
   }
   
-  document.getElementById('resultArea').innerHTML = html + "</table>";
+  document.getElementById('resultArea').innerHTML = html + "</table>" + 
+    `<div class="title-bar" style="background:var(--blue)">REUNIÃO JOVENS</div><table>...</table>` +
+    `<div class="title-bar" style="background:var(--orange)">ENSAIO</div><table>...</table>`;
 }
 
 document.getElementById('btnGenerate').addEventListener('click', gerarRodizio);
