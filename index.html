@@ -50,7 +50,29 @@
 const monthShort = ['JAN.','FEV.','MAR.','ABR.','MAI.','JUN.','JUL.','AGO.','SET.','OUT.','NOV.','DEZ.'];
 const dayName = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
 
-// NOVO: Função que conta os cultos passados para continuar a sequência exatamente de onde parou
+function carregarDados() {
+  const salvos = localStorage.getItem('ccb_listas_salvas');
+  if (salvos) {
+    const dados = JSON.parse(salvos);
+    if (dados.culto) document.getElementById('opsCulto').value = dados.culto;
+    if (dados.reuniao) document.getElementById('opsReuniao').value = dados.reuniao;
+    if (dados.ensaio) document.getElementById('opsEnsaio').value = dados.ensaio;
+    if (dados.jovens) document.getElementById('opsCultoJovem').value = dados.jovens;
+    if (dados.destaques !== undefined) document.getElementById('opsDestaques').value = dados.destaques;
+  }
+}
+
+function salvarDados() {
+  const dados = {
+    culto: document.getElementById('opsCulto').value,
+    reuniao: document.getElementById('opsReuniao').value,
+    ensaio: document.getElementById('opsEnsaio').value,
+    jovens: document.getElementById('opsCultoJovem').value,
+    destaques: document.getElementById('opsDestaques').value
+  };
+  localStorage.setItem('ccb_listas_salvas', JSON.stringify(dados));
+}
+
 function contarEventos(ano1, mes1, ano2, mes2, diasDesejados) {
   let count = 0;
   let d1 = new Date(ano1, mes1, 1, 12);
@@ -67,6 +89,8 @@ function contarEventos(ano1, mes1, ano2, mes2, diasDesejados) {
 }
 
 function gerarRodizio() {
+  salvarDados(); // Salva as listas toda vez que o botão é clicado
+
   const [y, m] = document.getElementById('monthPick').value.split('-').map(Number);
   const mi = m - 1;
   document.getElementById('previewMes').textContent = monthShort[mi] + ' - ' + y;
@@ -80,7 +104,6 @@ function gerarRodizio() {
   const allDays = [];
   for(let d=1; d<=new Date(y, m, 0).getDate(); d++){ allDays.push(new Date(y, mi, d)); }
   
-  // NOVO: Calcula onde a lista deve começar com base no mês âncora (Agosto de 2026 -> Ano 2026, Índice 7)
   let diffC = contarEventos(2026, 7, y, mi, [0, 2, 4]);
   let pC = ((diffC % oC.length) + oC.length) % oC.length;
   
@@ -126,6 +149,10 @@ function verificarSenha() {
 
 document.getElementById('btnGenerate').addEventListener('click', gerarRodizio);
 document.getElementById('btnPDF').addEventListener('click', () => html2pdf().from(document.getElementById("resultArea")).save());
+
+// Carrega os dados salvos antes de gerar a primeira vez
+carregarDados();
+
 document.getElementById('monthPick').value = new Date().getFullYear() + '-' + String(new Date().getMonth()+1).padStart(2,'0');
 gerarRodizio();
 </script>
