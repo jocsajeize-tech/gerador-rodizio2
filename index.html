@@ -50,6 +50,22 @@
 const monthShort = ['JAN.','FEV.','MAR.','ABR.','MAI.','JUN.','JUL.','AGO.','SET.','OUT.','NOV.','DEZ.'];
 const dayName = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
 
+// NOVO: Função que conta os cultos passados para continuar a sequência exatamente de onde parou
+function contarEventos(ano1, mes1, ano2, mes2, diasDesejados) {
+  let count = 0;
+  let d1 = new Date(ano1, mes1, 1, 12);
+  let d2 = new Date(ano2, mes2, 1, 12);
+  let sinal = d1 < d2 ? 1 : -1;
+  let atual = new Date(d1 < d2 ? d1 : d2);
+  let limite = new Date(d1 < d2 ? d2 : d1);
+  
+  while(atual < limite) {
+    if(diasDesejados.includes(atual.getDay())) count++;
+    atual.setDate(atual.getDate() + 1);
+  }
+  return count * sinal;
+}
+
 function gerarRodizio() {
   const [y, m] = document.getElementById('monthPick').value.split('-').map(Number);
   const mi = m - 1;
@@ -64,8 +80,19 @@ function gerarRodizio() {
   const allDays = [];
   for(let d=1; d<=new Date(y, m, 0).getDate(); d++){ allDays.push(new Date(y, mi, d)); }
   
+  // NOVO: Calcula onde a lista deve começar com base no mês âncora (Agosto de 2026 -> Ano 2026, Índice 7)
+  let diffC = contarEventos(2026, 7, y, mi, [0, 2, 4]);
+  let pC = ((diffC % oC.length) + oC.length) % oC.length;
+  
+  let diffR = contarEventos(2026, 7, y, mi, [0]);
+  let pR = ((diffR % oR.length) + oR.length) % oR.length;
+  
+  let diffMeses = (y - 2026) * 12 + (mi - 7);
+  let pE = ((diffMeses % oE.length) + oE.length) % oE.length;
+  let pJ = ((diffMeses % oJ.length) + oJ.length) % oJ.length;
+  
   // 1. CULTOS
-  let pC = 0, hC = `<div class="title-bar">CULTOS</div><table class="sheet"><tr><th>DIA</th><th>DATA</th><th>IRMÃO</th></tr>`;
+  let hC = `<div class="title-bar">CULTOS</div><table class="sheet"><tr><th>DIA</th><th>DATA</th><th>IRMÃO</th></tr>`;
   const doms = allDays.filter(d => d.getDay() === 0);
   
   allDays.forEach(dt => {
@@ -83,12 +110,11 @@ function gerarRodizio() {
   });
 
   // 2. OUTROS
-  let pR = 0;
   let hR = `<div class="title-bar" style="background:var(--blue)">REUNIÃO JOVENS</div><table class="sheet"><tr><th>DATA</th><th>IRMÃO</th></tr>` + allDays.filter(d=>d.getDay()==0).map(d=>`<tr><td>${d.getDate()}-${monthShort[mi]}</td><td>${oR[pR++ % oR.length]}</td></tr>`).join('') + `</table>`;
   let ensaioD = allDays.filter(d=>d.getDay()==5)[1];
-  let hE = `<div class="title-bar" style="background:var(--orange)">ENSAIO</div><table class="sheet"><tr><td>${ensaioD?.getDate()}-${monthShort[mi]}</td><td>${oE[0]}</td></tr></table>`;
+  let hE = `<div class="title-bar" style="background:var(--orange)">ENSAIO</div><table class="sheet"><tr><td>${ensaioD?.getDate()}-${monthShort[mi]}</td><td>${oE[pE] || ''}</td></tr></table>`;
   let cultoJD = allDays.filter(d=>d.getDay()==6)[1];
-  let hJ = `<div class="title-bar" style="background:var(--red)">CULTO JOVENS</div><table class="sheet"><tr><td>${cultoJD?.getDate()}-${monthShort[mi]}</td><td>${oJ[0]}</td></tr></table>`;
+  let hJ = `<div class="title-bar" style="background:var(--red)">CULTO JOVENS</div><table class="sheet"><tr><td>${cultoJD?.getDate()}-${monthShort[mi]}</td><td>${oJ[pJ] || ''}</td></tr></table>`;
   
   document.getElementById('resultArea').innerHTML = hC + "</table>" + hR + hE + hJ;
 }
