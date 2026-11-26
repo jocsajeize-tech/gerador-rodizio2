@@ -27,28 +27,36 @@
   .hint{text-align:center; font-size:12px; color:#555; margin-bottom:10px;}
 
   .pdf-uma-folha {
-    width: 740px !important;
-    padding: 6px 10px !important;
+    width: 680px !important;
+    max-width: 680px !important;
+    margin: 0 auto !important;
+    padding: 4px 8px !important;
     box-sizing: border-box !important;
     background: #fff !important;
+    overflow: visible !important;
   }
   .pdf-uma-folha h1 {
-    font-size: 18px !important;
-    margin: 0 0 8px 0 !important;
+    font-size: 16px !important;
+    margin: 0 0 6px 0 !important;
   }
   .pdf-uma-folha .title-bar {
     padding: 3px 6px !important;
-    font-size: 11px !important;
-    margin: 5px 0 0 0 !important;
+    font-size: 10.5px !important;
+    margin: 4px 0 0 0 !important;
+    box-sizing: border-box !important;
   }
   .pdf-uma-folha table.sheet {
-    margin: 0 0 6px 0 !important;
-    font-size: 10px !important;
+    width: 100% !important;
+    table-layout: fixed !important;
+    margin: 0 0 5px 0 !important;
+    font-size: 9.5px !important;
   }
   .pdf-uma-folha table.sheet th,
   .pdf-uma-folha table.sheet td {
-    padding: 2.5px 6px !important;
+    padding: 2px 5px !important;
     line-height: 1.15 !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
   }
 
   @media print {
@@ -254,13 +262,15 @@ function exportarPDFUmaFolha() {
   const clone = original.cloneNode(true);
   clone.classList.add("pdf-uma-folha");
   clone.querySelectorAll(".controls, #painelEditores, #hintAdm, .col-acao, .btn-destaque").forEach(el => el.remove());
+  clone.querySelectorAll("[contenteditable]").forEach(el => el.removeAttribute("contenteditable"));
 
   const wrapper = document.createElement("div");
   wrapper.style.position = "fixed";
-  wrapper.style.left = "-9999px";
+  wrapper.style.left = "0";
   wrapper.style.top = "0";
-  wrapper.style.width = "740px";
+  wrapper.style.width = "680px";
   wrapper.style.background = "#fff";
+  wrapper.style.zIndex = "-1";
   wrapper.appendChild(clone);
   document.body.appendChild(wrapper);
 
@@ -269,7 +279,13 @@ function exportarPDFUmaFolha() {
     margin: [6, 8, 6, 8],
     filename: `Rodizio_${mesTexto}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, windowWidth: 760 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: 696
+    },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
     pagebreak: { mode: ['avoid-all'] }
   };
