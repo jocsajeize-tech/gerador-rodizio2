@@ -22,37 +22,47 @@
   table.sheet{width:100%;border-collapse:collapse;margin:8px 0 18px;font-size:14px}
   table.sheet th, table.sheet td{border:1px solid var(--border);padding:8px}
   .destaque-amarelo{background-color:#ffeb3b; font-weight:bold; color:#d32f2f;}
-  .editavel:focus{outline:2px solid #2e6be6; background:#fffbe6;}
+  .editavel[contenteditable="true"]:focus{outline:2px solid #2e6be6; background:#fffbe6;}
   .btn-destaque{padding:4px 8px; font-size:12px; border-radius:4px;}
   .hint{text-align:center; font-size:12px; color:#555; margin-bottom:10px;}
+
+  @media print {
+    .controls, #painelEditores, .hint, .col-acao, .btn-destaque { display: none !important; }
+    body { background: #fff; }
+    .wrap { box-shadow: none; margin: 0; padding: 0; }
+  }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 <div class="wrap">
-  <h1>RODÍZIO MÊS DE <span id="previewMes">—</span></h1>
-  <div class="controls">
-    <input id="monthPick" type="month" />
-    <button id="btnGenerate" class="btn-primary">Gerar Rodízio</button>
-    <button id="btnPDF" class="btn-pdf">Exportar PDF</button>
-    <button id="btnLock" class="btn-lock" onclick="verificarSenha()">🔓 Editar</button>
-  </div>
-  <div class="hint">Clique nos textos da tabela para editar na hora ou use o botão "Destacar" em cada linha.</div>
-  <div id="painelEditores" class="panel">
-    <div class="card">
-        <label><strong>Culto (Dom/Ter/Qui)</strong></label><textarea id="opsCulto" class="oper">DANIEL&#10;FABIO&#10;CESA&#10;ROMULO</textarea>
-        <label><strong>Reunião Jovens</strong></label><textarea id="opsReuniao" class="oper">DANIEL F.N&#10;JONATAS</textarea>
-        <label><strong>Ensaio</strong></label><textarea id="opsEnsaio" class="oper">JONATAS</textarea>
-        <label><strong>Culto Jovens</strong></label><textarea id="opsCultoJovem" class="oper">FABIO</textarea>
-        <label><strong>Destaques Manuais (Data,Texto)</strong></label><textarea id="opsDestaques" class="oper" placeholder="12-jul,SANTA CEIA"></textarea>
+  <div id="pdfArea">
+    <h1>RODÍZIO MÊS DE <span id="previewMes">—</span></h1>
+    <div class="controls">
+      <input id="monthPick" type="month" />
+      <button id="btnGenerate" class="btn-primary">Gerar Rodízio</button>
+      <button id="btnPDF" class="btn-pdf">Exportar PDF</button>
+      <button id="btnLock" class="btn-lock" onclick="verificarSenha()">🔓 Editar</button>
     </div>
+    <div id="hintAdm" class="hint" style="display:none;">Modo ADM ativo: clique nas células para editar ou use "Destacar".</div>
+    <div id="painelEditores" class="panel">
+      <div class="card">
+          <label><strong>Culto (Dom/Ter/Qui)</strong></label><textarea id="opsCulto" class="oper">DANIEL&#10;FABIO&#10;CESA&#10;ROMULO</textarea>
+          <label><strong>Reunião Jovens</strong></label><textarea id="opsReuniao" class="oper">DANIEL F.N&#10;JONATAS</textarea>
+          <label><strong>Ensaio</strong></label><textarea id="opsEnsaio" class="oper">JONATAS</textarea>
+          <label><strong>Culto Jovens</strong></label><textarea id="opsCultoJovem" class="oper">FABIO</textarea>
+          <label><strong>Destaques Manuais (Data,Texto)</strong></label><textarea id="opsDestaques" class="oper" placeholder="12-jul,SANTA CEIA"></textarea>
+      </div>
+    </div>
+    <div id="resultArea"></div>
   </div>
-  <div id="resultArea"></div>
 </div>
 
 <script>
 const monthShort = ['JAN.','FEV.','MAR.','ABR.','MAI.','JUN.','JUL.','AGO.','SET.','OUT.','NOV.','DEZ.'];
 const dayName = ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+const SENHA_ADM = "1234";
+let isAdm = false;
 
 function carregarDados() {
   const salvos = localStorage.getItem('ccb_listas_salvas');
@@ -83,6 +93,7 @@ function obterEdicoesMes(chaveMes) {
 }
 
 function salvarEdicaoCelula(chaveMes, linhaId, campo, valor) {
+  if (!isAdm) return;
   const todas = JSON.parse(localStorage.getItem('ccb_edicoes_tabela') || '{}');
   if (!todas[chaveMes]) todas[chaveMes] = {};
   if (!todas[chaveMes][linhaId]) todas[chaveMes][linhaId] = {};
@@ -91,6 +102,7 @@ function salvarEdicaoCelula(chaveMes, linhaId, campo, valor) {
 }
 
 function alternarDestaqueLinha(chaveMes, linhaId) {
+  if (!isAdm) return;
   const todas = JSON.parse(localStorage.getItem('ccb_edicoes_tabela') || '{}');
   if (!todas[chaveMes]) todas[chaveMes] = {};
   if (!todas[chaveMes][linhaId]) todas[chaveMes][linhaId] = {};
@@ -116,7 +128,7 @@ function contarEventos(ano1, mes1, ano2, mes2, diasDesejados) {
 }
 
 function gerarRodizio() {
-  salvarDados();
+  if (isAdm) salvarDados();
 
   const [y, m] = document.getElementById('monthPick').value.split('-').map(Number);
   const mi = m - 1;
@@ -149,14 +161,21 @@ function gerarRodizio() {
     const cl = destacado ? "class='destaque-amarelo'" : "";
     const tds = colunas.map((c, idx) => {
       const val = ed['col' + idx] !== undefined ? ed['col' + idx] : c.texto;
-      return `<td class="editavel" contenteditable="true" onblur="salvarEdicaoCelula('${chaveMes}','${linhaId}','col${idx}',this.innerText.trim())">${val}</td>`;
+      if (isAdm) {
+        return `<td class="editavel" contenteditable="true" onblur="salvarEdicaoCelula('${chaveMes}','${linhaId}','col${idx}',this.innerText.trim())">${val}</td>`;
+      }
+      return `<td>${val}</td>`;
     }).join('');
-    const btn = `<td style="text-align:center; width:90px;"><button class="btn-destaque" onclick="alternarDestaqueLinha('${chaveMes}','${linhaId}')">${destacado ? '★ Destaque' : '☆ Destacar'}</button></td>`;
+    const btn = isAdm
+      ? `<td class="col-acao" style="text-align:center; width:90px;"><button class="btn-destaque" onclick="alternarDestaqueLinha('${chaveMes}','${linhaId}')">${destacado ? '★ Destaque' : '☆ Destacar'}</button></td>`
+      : "";
     return `<tr ${cl}>${tds}${btn}</tr>`;
   }
+
+  const thAcao = isAdm ? `<th class="col-acao">Ação</th>` : "";
   
   // 1. CULTOS
-  let hC = `<div class="title-bar">CULTOS</div><table class="sheet"><tr><th>DIA</th><th>DATA</th><th>IRMÃO</th><th>Ação</th></tr>`;
+  let hC = `<div class="title-bar">CULTOS</div><table class="sheet"><tr><th>DIA</th><th>DATA</th><th>IRMÃO</th>${thAcao}</tr>`;
   const doms = allDays.filter(d => d.getDay() === 0);
   
   allDays.forEach(dt => {
@@ -173,15 +192,15 @@ function gerarRodizio() {
   });
 
   // 2. OUTROS
-  let hR = `<div class="title-bar" style="background:var(--blue)">REUNIÃO JOVENS</div><table class="sheet"><tr><th>DATA</th><th>IRMÃO</th><th>Ação</th></tr>` +
+  let hR = `<div class="title-bar" style="background:var(--blue)">REUNIÃO JOVENS</div><table class="sheet"><tr><th>DATA</th><th>IRMÃO</th>${thAcao}</tr>` +
     allDays.filter(d=>d.getDay()==0).map((d, idx) => renderLinha(`reuniao_${idx}`, [{texto: `${d.getDate()}-${monthShort[mi]}`}, {texto: oR[pR++ % oR.length]}], false)).join('') + `</table>`;
 
   let ensaioD = allDays.filter(d=>d.getDay()==5)[1];
-  let hE = `<div class="title-bar" style="background:var(--orange)">ENSAIO</div><table class="sheet"><tr><th>DATA</th><th>IRMÃO</th><th>Ação</th></tr>` +
+  let hE = `<div class="title-bar" style="background:var(--orange)">ENSAIO</div><table class="sheet"><tr><th>DATA</th><th>IRMÃO</th>${thAcao}</tr>` +
     renderLinha('ensaio_0', [{texto: ensaioD ? `${ensaioD.getDate()}-${monthShort[mi]}` : ''}, {texto: oE[pE] || ''}], false) + `</table>`;
 
   let cultoJD = allDays.filter(d=>d.getDay()==6)[1];
-  let hJ = `<div class="title-bar" style="background:var(--red)">CULTO JOVENS</div><table class="sheet"><tr><th>DATA</th><th>IRMÃO</th><th>Ação</th></tr>` +
+  let hJ = `<div class="title-bar" style="background:var(--red)">CULTO JOVENS</div><table class="sheet"><tr><th>DATA</th><th>IRMÃO</th>${thAcao}</tr>` +
     renderLinha('jovens_0', [{texto: cultoJD ? `${cultoJD.getDate()}-${monthShort[mi]}` : ''}, {texto: oJ[pJ] || ''}], false) + `</table>`;
   
   document.getElementById('resultArea').innerHTML = hC + "</table>" + hR + hE + hJ;
@@ -189,11 +208,58 @@ function gerarRodizio() {
 
 function verificarSenha() {
   const p = document.getElementById('painelEditores');
-  if(prompt("Senha:") === "1234") p.style.display = (p.style.display === "block" ? "none" : "block");
+  const btn = document.getElementById('btnLock');
+  const hint = document.getElementById('hintAdm');
+
+  if (isAdm) {
+    salvarDados();
+    isAdm = false;
+    p.style.display = "none";
+    hint.style.display = "none";
+    btn.textContent = "🔓 Editar";
+    gerarRodizio();
+    return;
+  }
+
+  if (prompt("Senha do ADM:") === SENHA_ADM) {
+    isAdm = true;
+    p.style.display = "block";
+    hint.style.display = "block";
+    btn.textContent = "🔒 Bloquear";
+    gerarRodizio();
+  }
+}
+
+function exportarPDFSemBotoes() {
+  const original = document.getElementById("pdfArea");
+  const clone = original.cloneNode(true);
+  clone.querySelectorAll(".controls, #painelEditores, #hintAdm, .col-acao, .btn-destaque").forEach(el => el.remove());
+
+  const wrapper = document.createElement("div");
+  wrapper.style.position = "fixed";
+  wrapper.style.left = "-9999px";
+  wrapper.style.top = "0";
+  wrapper.style.width = "1000px";
+  wrapper.style.background = "#fff";
+  wrapper.appendChild(clone);
+  document.body.appendChild(wrapper);
+
+  const mesTexto = document.getElementById('previewMes').textContent;
+  const opt = {
+    margin: 10,
+    filename: `Rodizio_${mesTexto}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+
+  html2pdf().set(opt).from(clone).save().then(() => {
+    wrapper.remove();
+  });
 }
 
 document.getElementById('btnGenerate').addEventListener('click', gerarRodizio);
-document.getElementById('btnPDF').addEventListener('click', () => html2pdf().from(document.getElementById("resultArea")).save());
+document.getElementById('btnPDF').addEventListener('click', exportarPDFSemBotoes);
 
 carregarDados();
 
