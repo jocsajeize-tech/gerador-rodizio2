@@ -26,7 +26,6 @@
   .btn-destaque{padding:4px 8px; font-size:12px; border-radius:4px;}
   .hint{text-align:center; font-size:12px; color:#555; margin-bottom:10px;}
 
-  /* Estilo compacto aplicado apenas na cópia que vai para o PDF de 1 página */
   .pdf-uma-folha {
     width: 740px !important;
     padding: 6px 10px !important;
@@ -77,7 +76,6 @@
           <label><strong>Reunião Jovens</strong></label><textarea id="opsReuniao" class="oper">DANIEL F.N&#10;JONATAS</textarea>
           <label><strong>Ensaio</strong></label><textarea id="opsEnsaio" class="oper">JONATAS</textarea>
           <label><strong>Culto Jovens</strong></label><textarea id="opsCultoJovem" class="oper">FABIO</textarea>
-          <label><strong>Destaques Manuais (Data,Texto)</strong></label><textarea id="opsDestaques" class="oper" placeholder="12-jul,SANTA CEIA"></textarea>
       </div>
     </div>
     <div id="resultArea"></div>
@@ -98,7 +96,6 @@ function carregarDados() {
     if (dados.reuniao) document.getElementById('opsReuniao').value = dados.reuniao;
     if (dados.ensaio) document.getElementById('opsEnsaio').value = dados.ensaio;
     if (dados.jovens) document.getElementById('opsCultoJovem').value = dados.jovens;
-    if (dados.destaques !== undefined) document.getElementById('opsDestaques').value = dados.destaques;
   }
 }
 
@@ -107,8 +104,7 @@ function salvarDados() {
     culto: document.getElementById('opsCulto').value,
     reuniao: document.getElementById('opsReuniao').value,
     ensaio: document.getElementById('opsEnsaio').value,
-    jovens: document.getElementById('opsCultoJovem').value,
-    destaques: document.getElementById('opsDestaques').value
+    jovens: document.getElementById('opsCultoJovem').value
   };
   localStorage.setItem('ccb_listas_salvas', JSON.stringify(dados));
 }
@@ -166,7 +162,6 @@ function gerarRodizio() {
   const oR = document.getElementById('opsReuniao').value.split('\n').filter(s => s.trim() !== '');
   const oE = document.getElementById('opsEnsaio').value.split('\n').filter(s => s.trim() !== '');
   const oJ = document.getElementById('opsCultoJovem').value.split('\n').filter(s => s.trim() !== '');
-  const dts = document.getElementById('opsDestaques').value.split('\n').filter(s => s.trim() !== '');
   
   const allDays = [];
   for(let d=1; d<=new Date(y, m, 0).getDate(); d++){ allDays.push(new Date(y, mi, d)); }
@@ -207,10 +202,8 @@ function gerarRodizio() {
   allDays.forEach(dt => {
     if([0, 2, 4].includes(dt.getDay())){
       let nome = oC[pC++ % oC.length], destPadrao = false;
-      let dataStr = dt.getDate() + '-' + monthShort[mi].toLowerCase().replace('.','');
       
       if (mi % 2 === 0 && dt.getDay() === 0 && doms.indexOf(dt) === 1) { nome += " — BATISMO"; destPadrao = true; }
-      dts.forEach(item => { if(item.includes(',') && item.split(',')[0].trim() == dataStr) { nome += " — " + item.split(',')[1]; destPadrao = true; } });
       
       const linhaId = `culto_${dt.getDate()}`;
       hC += renderLinha(linhaId, [{texto: dayName[dt.getDay()]}, {texto: `${dt.getDate()}-${monthShort[mi]}`}, {texto: nome}], destPadrao);
