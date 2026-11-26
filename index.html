@@ -22,6 +22,9 @@
   table.sheet{width:100%;border-collapse:collapse;margin:8px 0 18px;font-size:14px}
   table.sheet th, table.sheet td{border:1px solid var(--border);padding:8px}
   .destaque-amarelo{background-color:#ffeb3b; font-weight:bold; color:#d32f2f;}
+  .editavel:focus{outline:2px solid #2e6be6; background:#fffbe6;}
+  .btn-destaque{padding:4px 8px; font-size:12px; border-radius:4px;}
+  .hint{text-align:center; font-size:12px; color:#555; margin-bottom:10px;}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
@@ -34,6 +37,7 @@
     <button id="btnPDF" class="btn-pdf">Exportar PDF</button>
     <button id="btnLock" class="btn-lock" onclick="verificarSenha()">🔓 Editar</button>
   </div>
+  <div class="hint">Clique nos textos da tabela para editar na hora ou use o botão "Destacar" em cada linha.</div>
   <div id="painelEditores" class="panel">
     <div class="card">
         <label><strong>Culto (Dom/Ter/Qui)</strong></label><textarea id="opsCulto" class="oper">DANIEL&#10;FABIO&#10;CESA&#10;ROMULO</textarea>
@@ -73,6 +77,29 @@ function salvarDados() {
   localStorage.setItem('ccb_listas_salvas', JSON.stringify(dados));
 }
 
+function obterEdicoesMes(chaveMes) {
+  const todas = JSON.parse(localStorage.getItem('ccb_edicoes_tabela') || '{}');
+  return todas[chaveMes] || {};
+}
+
+function salvarEdicaoCelula(chaveMes, linhaId, campo, valor) {
+  const todas = JSON.parse(localStorage.getItem('ccb_edicoes_tabela') || '{}');
+  if (!todas[chaveMes]) todas[chaveMes] = {};
+  if (!todas[chaveMes][linhaId]) todas[chaveMes][linhaId] = {};
+  todas[chaveMes][linhaId][campo] = valor;
+  localStorage.setItem('ccb_edicoes_tabela', JSON.stringify(todas));
+}
+
+function alternarDestaqueLinha(chaveMes, linhaId) {
+  const todas = JSON.parse(localStorage.getItem('ccb_edicoes_tabela') || '{}');
+  if (!todas[chaveMes]) todas[chaveMes] = {};
+  if (!todas[chaveMes][linhaId]) todas[chaveMes][linhaId] = {};
+  const atual = !!todas[chaveMes][linhaId].destaque;
+  todas[chaveMes][linhaId].destaque = !atual;
+  localStorage.setItem('ccb_edicoes_tabela', JSON.stringify(todas));
+  gerarRodizio();
+}
+
 function contarEventos(ano1, mes1, ano2, mes2, diasDesejados) {
   let count = 0;
   let d1 = new Date(ano1, mes1, 1, 12);
@@ -89,10 +116,12 @@ function contarEventos(ano1, mes1, ano2, mes2, diasDesejados) {
 }
 
 function gerarRodizio() {
-  salvarDados(); // Salva as listas toda vez que o botão é clicado
+  salvarDados();
 
   const [y, m] = document.getElementById('monthPick').value.split('-').map(Number);
   const mi = m - 1;
+  const chaveMes = `${y}-${String(m).padStart(2,'0')}`;
+  const edicoes = obterEdicoesMes(chaveMes);
   document.getElementById('previewMes').textContent = monthShort[mi] + ' - ' + y;
   
   const oC = document.getElementById('opsCulto').value.split('\n').filter(s => s.trim() !== '');
@@ -113,31 +142,47 @@ function gerarRodizio() {
   let diffMeses = (y - 2026) * 12 + (mi - 7);
   let pE = ((diffMeses % oE.length) + oE.length) % oE.length;
   let pJ = ((diffMeses % oJ.length) + oJ.length) % oJ.length;
+
+  function renderLinha(linhaId, colunas, destaquePadrao) {
+    const ed = edicoes[linhaId] || {};
+    const destacado = ed.destaque !== undefined ? ed.destaque : destaquePadrao;
+    const cl = destacado ? "class='destaque-amarelo'" : "";
+    const tds = colunas.map((c, idx) => {
+      const val = ed['col' + idx] !== undefined ? ed['col' + idx] : c.texto;
+      return `<td class="editavel" contenteditable="true" onblur="salvarEdicaoCelula('${chaveMes}','${linhaId}','col${idx}',this.innerText.trim())">${val}</td>`;
+    }).join('');
+    const btn = `<td style="text-align:center; width:90px;"><button class="btn-destaque" onclick="alternarDestaqueLinha('${chaveMes}','${linhaId}')">${destacado ? '★ Destaque' : '☆ Destacar'}</button></td>`;
+    return `<tr ${cl}>${tds}${btn}</tr>`;
+  }
   
   // 1. CULTOS
-  let hC = `<div class="title-bar">CULTOS</div><table class="sheet"><tr><th>DIA</th><th>DATA</th><th>IRMÃO</th></tr>`;
+  let hC = `<div class="title-bar">CULTOS</div><table class="sheet"><tr><th>DIA</th><th>DATA</th><th>IRMÃO</th><th>Ação</th></tr>`;
   const doms = allDays.filter(d => d.getDay() === 0);
   
   allDays.forEach(dt => {
     if([0, 2, 4].includes(dt.getDay())){
-      let nome = oC[pC++ % oC.length], cl = "";
+      let nome = oC[pC++ % oC.length], destPadrao = false;
       let dataStr = dt.getDate() + '-' + monthShort[mi].toLowerCase().replace('.','');
       
-      // Auto Batismo
-      if (mi % 2 === 0 && dt.getDay() === 0 && doms.indexOf(dt) === 1) { nome += " — BATISMO"; cl = "class='destaque-amarelo'"; }
-      // Destaque Manual
-      dts.forEach(item => { if(item.includes(',') && item.split(',')[0].trim() == dataStr) { nome += " — " + item.split(',')[1]; cl = "class='destaque-amarelo'"; } });
+      if (mi % 2 === 0 && dt.getDay() === 0 && doms.indexOf(dt) === 1) { nome += " — BATISMO"; destPadrao = true; }
+      dts.forEach(item => { if(item.includes(',') && item.split(',')[0].trim() == dataStr) { nome += " — " + item.split(',')[1]; destPadrao = true; } });
       
-      hC += `<tr ${cl}><td>${dayName[dt.getDay()]}</td><td>${dt.getDate()}-${monthShort[mi]}</td><td>${nome}</td></tr>`;
+      const linhaId = `culto_${dt.getDate()}`;
+      hC += renderLinha(linhaId, [{texto: dayName[dt.getDay()]}, {texto: `${dt.getDate()}-${monthShort[mi]}`}, {texto: nome}], destPadrao);
     }
   });
 
   // 2. OUTROS
-  let hR = `<div class="title-bar" style="background:var(--blue)">REUNIÃO JOVENS</div><table class="sheet"><tr><th>DATA</th><th>IRMÃO</th></tr>` + allDays.filter(d=>d.getDay()==0).map(d=>`<tr><td>${d.getDate()}-${monthShort[mi]}</td><td>${oR[pR++ % oR.length]}</td></tr>`).join('') + `</table>`;
+  let hR = `<div class="title-bar" style="background:var(--blue)">REUNIÃO JOVENS</div><table class="sheet"><tr><th>DATA</th><th>IRMÃO</th><th>Ação</th></tr>` +
+    allDays.filter(d=>d.getDay()==0).map((d, idx) => renderLinha(`reuniao_${idx}`, [{texto: `${d.getDate()}-${monthShort[mi]}`}, {texto: oR[pR++ % oR.length]}], false)).join('') + `</table>`;
+
   let ensaioD = allDays.filter(d=>d.getDay()==5)[1];
-  let hE = `<div class="title-bar" style="background:var(--orange)">ENSAIO</div><table class="sheet"><tr><td>${ensaioD?.getDate()}-${monthShort[mi]}</td><td>${oE[pE] || ''}</td></tr></table>`;
+  let hE = `<div class="title-bar" style="background:var(--orange)">ENSAIO</div><table class="sheet"><tr><th>DATA</th><th>IRMÃO</th><th>Ação</th></tr>` +
+    renderLinha('ensaio_0', [{texto: ensaioD ? `${ensaioD.getDate()}-${monthShort[mi]}` : ''}, {texto: oE[pE] || ''}], false) + `</table>`;
+
   let cultoJD = allDays.filter(d=>d.getDay()==6)[1];
-  let hJ = `<div class="title-bar" style="background:var(--red)">CULTO JOVENS</div><table class="sheet"><tr><td>${cultoJD?.getDate()}-${monthShort[mi]}</td><td>${oJ[pJ] || ''}</td></tr></table>`;
+  let hJ = `<div class="title-bar" style="background:var(--red)">CULTO JOVENS</div><table class="sheet"><tr><th>DATA</th><th>IRMÃO</th><th>Ação</th></tr>` +
+    renderLinha('jovens_0', [{texto: cultoJD ? `${cultoJD.getDate()}-${monthShort[mi]}` : ''}, {texto: oJ[pJ] || ''}], false) + `</table>`;
   
   document.getElementById('resultArea').innerHTML = hC + "</table>" + hR + hE + hJ;
 }
@@ -150,7 +195,6 @@ function verificarSenha() {
 document.getElementById('btnGenerate').addEventListener('click', gerarRodizio);
 document.getElementById('btnPDF').addEventListener('click', () => html2pdf().from(document.getElementById("resultArea")).save());
 
-// Carrega os dados salvos antes de gerar a primeira vez
 carregarDados();
 
 document.getElementById('monthPick').value = new Date().getFullYear() + '-' + String(new Date().getMonth()+1).padStart(2,'0');
