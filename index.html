@@ -27,10 +27,10 @@
   .hint{text-align:center; font-size:12px; color:#555; margin-bottom:10px;}
 
   .pdf-uma-folha {
-    width: 640px !important;
-    max-width: 640px !important;
+    width: 580px !important;
+    max-width: 580px !important;
     margin: 0 !important;
-    padding: 4px 6px !important;
+    padding: 4px 8px !important;
     box-sizing: border-box !important;
     background: #fff !important;
   }
@@ -262,28 +262,28 @@ function exportarPDFUmaFolha() {
 
   const overlay = document.createElement("div");
   overlay.style.position = "fixed";
-  overlay.style.inset = "0";
+  overlay.style.left = "0";
+  overlay.style.top = "0";
+  overlay.style.width = "100vw";
+  overlay.style.height = "100vh";
   overlay.style.background = "#ffffff";
   overlay.style.zIndex = "99999";
   overlay.style.overflow = "hidden";
-  overlay.style.display = "flex";
-  overlay.style.justifyContent = "flex-start";
-  overlay.style.alignItems = "flex-start";
-  overlay.style.paddingLeft = "12px";
+  overlay.style.padding = "8px 16px";
+  overlay.style.boxSizing = "border-box";
   overlay.appendChild(clone);
   document.body.appendChild(overlay);
 
   const mesTexto = document.getElementById('previewMes').textContent;
   const opt = {
-    margin: [5, 8, 5, 8],
+    margin: [6, 8, 6, 8],
     filename: `Rodizio_${mesTexto}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: {
       scale: 2,
       useCORS: true,
       scrollX: 0,
-      scrollY: 0,
-      windowWidth: 680
+      scrollY: 0
     },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
     pagebreak: { mode: ['avoid-all'] }
